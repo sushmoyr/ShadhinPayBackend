@@ -12,15 +12,15 @@ class VendorCredentialsTest {
     VendorCredentials creds =
         new VendorCredentials(
             Map.of(
-                "app_key", "AKIA-VERY-SECRET-KEY",
-                "app_secret", "supersecretpassword123",
-                "api_token", "Bearer-abcdef-1234567890"));
+                "app_key", "fake-app-key-aaa",
+                "app_secret", "fake-app-secret-aaa",
+                "api_token", "fake-api-token-aaa"));
 
     String rendered = creds.toString();
 
-    assertThat(rendered).doesNotContain("AKIA-VERY-SECRET-KEY");
-    assertThat(rendered).doesNotContain("supersecretpassword123");
-    assertThat(rendered).doesNotContain("Bearer-abcdef-1234567890");
+    assertThat(rendered).doesNotContain("fake-app-key-aaa");
+    assertThat(rendered).doesNotContain("fake-app-secret-aaa");
+    assertThat(rendered).doesNotContain("fake-api-token-aaa");
     assertThat(rendered).contains("app_key");
     assertThat(rendered).contains("app_secret");
     assertThat(rendered).contains("api_token");

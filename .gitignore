@@ -51,3 +51,6 @@ HELP.md
 
 # Generated OpenAPI artifacts
 openapi.json
+
+# jqwik property-test database (generated, per-module)
+.jqwik-database

@@ -1,0 +1,38 @@
+# Enforce LF for text artifacts so Spotless / formatters behave the same
+# on Windows checkouts and Linux CI runners. Binary types are explicit
+# so git never tries to normalize them.
+
+* text=auto eol=lf
+
+*.java        text eol=lf
+*.kt          text eol=lf
+*.kts         text eol=lf
+*.xml         text eol=lf
+*.yml         text eol=lf
+*.yaml        text eol=lf
+*.json        text eol=lf
+*.md          text eol=lf
+*.properties  text eol=lf
+*.sql         text eol=lf
+*.sh          text eol=lf
+*.toml        text eol=lf
+.gitattributes text eol=lf
+.gitignore     text eol=lf
+.editorconfig  text eol=lf
+
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
+*.ps1         text eol=crlf
+
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.jar  binary
+*.zip  binary
+*.gz   binary
+*.p12  binary
+*.pfx  binary
+*.keystore binary
