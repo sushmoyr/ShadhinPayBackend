@@ -1,0 +1,13 @@
+title = "ShadhinPay gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "False-positive paths for the gitleaks scan"
+paths = [
+  '''(^|/)target(/|$)''',
+  '''(^|/)\.idea(/|$)''',
+  '''(^|/)DOCS/contracts/openapi\.json$''',
+  '''(^|/).*\.lock$''',
+]

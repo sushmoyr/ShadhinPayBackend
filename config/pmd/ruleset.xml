@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<ruleset name="ShadhinPay PMD Conservative"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0
+                             https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>
+    Conservative PMD ruleset focused on real bugs and severe code-smells.
+    Style nits are intentionally excluded — Spotless / google-java-format owns formatting.
+  </description>
+
+  <!-- Genuine bugs -->
+  <rule ref="category/java/errorprone.xml">
+    <exclude name="BeanMembersShouldSerialize"/>
+    <exclude name="DataflowAnomalyAnalysis"/>
+    <exclude name="AvoidFieldNameMatchingMethodName"/>
+    <exclude name="AvoidLiteralsInIfCondition"/>
+    <exclude name="MissingSerialVersionUID"/>
+    <exclude name="NullAssignment"/>
+    <exclude name="AvoidDuplicateLiterals"/>
+    <exclude name="UseProperClassLoader"/>
+  </rule>
+
+  <!-- Best practices that catch real issues -->
+  <rule ref="category/java/bestpractices.xml">
+    <exclude name="GuardLogStatement"/>
+    <exclude name="JUnitTestContainsTooManyAsserts"/>
+    <exclude name="JUnitAssertionsShouldIncludeMessage"/>
+    <exclude name="JUnitTestsShouldIncludeAssert"/>
+    <exclude name="UseVarargs"/>
+    <exclude name="LooseCoupling"/>
+    <exclude name="UnusedPrivateField"/>
+    <exclude name="UnusedPrivateMethod"/>
+    <exclude name="AccessorClassGeneration"/>
+    <exclude name="AccessorMethodGeneration"/>
+  </rule>
+
+  <!-- Likely-multithreaded-bug rules -->
+  <rule ref="category/java/multithreading.xml">
+    <exclude name="UseConcurrentHashMap"/>
+    <exclude name="DoNotUseThreads"/>
+  </rule>
+
+  <!-- Performance pitfalls -->
+  <rule ref="category/java/performance.xml">
+    <exclude name="AvoidInstantiatingObjectsInLoops"/>
+    <exclude name="UseStringBufferForStringAppends"/>
+  </rule>
+</ruleset>

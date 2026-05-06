@@ -1,0 +1,118 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MAVEN_CLI_OPTS: "-B -ntp -Dstyle.color=always"
+
+jobs:
+  build:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: shadhinpay
+          POSTGRES_PASSWORD: shadhinpay
+          POSTGRES_DB: shadhinpay
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U shadhinpay"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-
+
+      - name: Spotless check
+        run: mvn $MAVEN_CLI_OPTS spotless:check
+
+      - name: Verify (unit + integration + Modulith verify + ArchUnit + JaCoCo gate)
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: shadhinpay
+          DB_USER: shadhinpay
+          DB_PASSWORD: shadhinpay
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-do-not-use-in-prod-32bytes!' }}
+        run: mvn $MAVEN_CLI_OPTS -Pcoverage verify
+
+      - name: Emit OpenAPI JSON
+        run: mvn $MAVEN_CLI_OPTS -pl shadhinpay-application -am -Popenapi -DskipTests=true verify
+
+      - name: Static analysis — SpotBugs + PMD
+        run: mvn $MAVEN_CLI_OPTS -Pstatic-analysis -DskipTests=true verify
+
+      - name: Secret scan — gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Upload Modulith C4 docs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-modulith-docs
+          path: shadhinpay-application/target/spring-modulith-docs/
+          if-no-files-found: warn
+
+      - name: Upload OpenAPI artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openapi
+          path: shadhinpay-application/target/openapi/openapi.json
+          if-no-files-found: warn
+
+      - name: Upload JaCoCo reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: "**/target/site/jacoco/**"
+          if-no-files-found: warn
