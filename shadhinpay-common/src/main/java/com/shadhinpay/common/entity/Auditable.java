@@ -11,7 +11,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Getter
 @Setter
 @MappedSuperclass
-public abstract class Auditable {
+public class Auditable {
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)

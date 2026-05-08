@@ -1,6 +1,7 @@
 package com.shadhinpay.common.crypto;
 
 import java.util.Base64;
+import java.util.Locale;
 import java.util.Set;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -52,7 +53,7 @@ public class CryptoConfig {
       return false;
     }
     for (String profile : environment.getActiveProfiles()) {
-      if (NON_DEV_PROFILES.contains(profile.toLowerCase())) {
+      if (NON_DEV_PROFILES.contains(profile.toLowerCase(Locale.ROOT))) {
         return true;
       }
     }

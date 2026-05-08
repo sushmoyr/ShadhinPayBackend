@@ -14,7 +14,7 @@ import org.springframework.data.domain.Sort;
 @AllArgsConstructor
 public class PaginationRequest {
 
-  private int page = 0;
+  private int page;
   private int size = 20;
   private String sortBy = "createdAt";
   private Sort.Direction order = Sort.Direction.DESC;

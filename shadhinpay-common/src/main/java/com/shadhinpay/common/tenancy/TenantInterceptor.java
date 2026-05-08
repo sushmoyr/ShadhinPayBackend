@@ -29,8 +29,8 @@ public class TenantInterceptor implements HandlerInterceptor {
     if (businessId == null) {
       return true;
     }
-    Session session = entityManager.unwrap(Session.class);
-    session
+    entityManager
+        .unwrap(Session.class)
         .enableFilter(TenantFilterDef.NAME)
         .setParameter(TenantFilterDef.PARAM_BUSINESS_ID, businessId);
     return true;
@@ -40,8 +40,7 @@ public class TenantInterceptor implements HandlerInterceptor {
   public void afterCompletion(
       HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
     try {
-      Session session = entityManager.unwrap(Session.class);
-      session.disableFilter(TenantFilterDef.NAME);
+      entityManager.unwrap(Session.class).disableFilter(TenantFilterDef.NAME);
     } catch (IllegalStateException ignored) {
       // Session no longer active; nothing to disable.
     }

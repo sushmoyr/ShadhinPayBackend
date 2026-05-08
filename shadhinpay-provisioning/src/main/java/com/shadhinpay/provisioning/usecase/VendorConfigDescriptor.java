@@ -16,6 +16,7 @@ import java.util.Objects;
  *     to defer enum coupling to Phase 1
  * @param credentialsRefs immutable map of opaque credential handles, never plaintext secrets
  */
+@SuppressWarnings("PMD.UnusedAssignment")
 public record VendorConfigDescriptor(
     String vendor, String mode, Map<String, String> credentialsRefs) {
 

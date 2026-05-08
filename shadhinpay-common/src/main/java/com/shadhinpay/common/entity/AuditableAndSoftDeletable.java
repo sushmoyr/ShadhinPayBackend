@@ -11,5 +11,5 @@ import lombok.Setter;
 public abstract class AuditableAndSoftDeletable extends Auditable {
 
   @Column(name = "deleted", nullable = false, columnDefinition = "boolean default false")
-  private boolean deleted = false;
+  private boolean deleted;
 }

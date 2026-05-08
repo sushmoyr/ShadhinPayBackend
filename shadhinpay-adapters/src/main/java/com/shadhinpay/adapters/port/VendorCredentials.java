@@ -21,6 +21,7 @@ import java.util.Objects;
  * @param values decrypted key/value pairs (e.g. {@code app_key}, {@code app_secret}, {@code
  *     api_key}); the exact key set is vendor-specific and documented by each adapter
  */
+@SuppressWarnings("PMD.UnusedAssignment")
 public record VendorCredentials(Map<String, String> values) {
 
   public VendorCredentials {
@@ -34,7 +35,8 @@ public record VendorCredentials(Map<String, String> values) {
    */
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder("VendorCredentials{keys=[");
+    StringBuilder sb = new StringBuilder(80);
+    sb.append("VendorCredentials{keys=[");
     boolean first = true;
     for (String key : values.keySet()) {
       if (!first) {

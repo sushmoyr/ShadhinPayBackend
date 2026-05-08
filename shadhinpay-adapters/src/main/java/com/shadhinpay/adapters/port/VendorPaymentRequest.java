@@ -20,6 +20,7 @@ import java.util.UUID;
  * @param metadata immutable bag of additional vendor-specific hints (e.g. {@code "channel"}, {@code
  *     "device_id"})
  */
+@SuppressWarnings("PMD.UnusedAssignment")
 public record VendorPaymentRequest(
     UUID transactionId,
     Money amount,

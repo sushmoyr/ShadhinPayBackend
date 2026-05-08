@@ -22,6 +22,7 @@ import java.util.UUID;
  * @param metadata immutable bag of merchant-supplied attributes echoed back on every notification
  * @param idempotencyKey caller-supplied key from the {@code X-Idempotency-Key} header
  */
+@SuppressWarnings("PMD.UnusedAssignment")
 public record InitiatePaymentRequest(
     UUID businessId,
     Money amount,

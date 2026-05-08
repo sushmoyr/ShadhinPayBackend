@@ -17,6 +17,7 @@ import java.util.UUID;
  * @param reason human-readable explanation suitable for risk audit logs (never returned to the end
  *     customer)
  */
+@SuppressWarnings("PMD.UnusedAssignment")
 public record RiskDecision(Action action, int score, List<UUID> triggeredRuleIds, String reason) {
 
   /** Final decision the orchestrator must apply. */

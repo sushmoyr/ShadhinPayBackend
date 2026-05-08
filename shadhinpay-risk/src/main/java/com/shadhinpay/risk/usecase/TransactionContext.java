@@ -24,6 +24,7 @@ import java.util.UUID;
  * @param metadata immutable bag of contextual attributes (e.g. {@code "device_id"}, {@code
  *     "channel"})
  */
+@SuppressWarnings("PMD.UnusedAssignment")
 public record TransactionContext(
     UUID merchantId,
     Money amount,

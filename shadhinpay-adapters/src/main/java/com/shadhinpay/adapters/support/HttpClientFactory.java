@@ -45,10 +45,10 @@ public class HttpClientFactory {
    */
   public OkHttpClient clientFor(Vendor vendor) {
     Objects.requireNonNull(vendor, "vendor must not be null");
-    return clients.computeIfAbsent(vendor, this::build);
+    return clients.computeIfAbsent(vendor, ignored -> buildClient());
   }
 
-  private OkHttpClient build(Vendor vendor) {
+  private OkHttpClient buildClient() {
     return new OkHttpClient.Builder()
         .connectTimeout(CONNECT_TIMEOUT)
         .readTimeout(READ_WRITE_TIMEOUT)

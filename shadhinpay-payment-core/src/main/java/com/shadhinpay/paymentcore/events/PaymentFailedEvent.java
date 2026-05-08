@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+@SuppressWarnings("PMD.UnusedAssignment")
 public record PaymentFailedEvent(
     UUID transactionId,
     UUID merchantId,
