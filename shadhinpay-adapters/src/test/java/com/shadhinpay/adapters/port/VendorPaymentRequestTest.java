@@ -54,7 +54,8 @@ class VendorPaymentRequestTest {
   void metadata_is_defensively_copied() {
     Map<String, String> mutable = new HashMap<>();
     mutable.put("channel", "web");
-    VendorPaymentRequest req = new VendorPaymentRequest(TXN_ID, AMOUNT, ORDER_REF, CALLBACK, mutable);
+    VendorPaymentRequest req =
+        new VendorPaymentRequest(TXN_ID, AMOUNT, ORDER_REF, CALLBACK, mutable);
     mutable.put("extra", "should-not-appear");
     assertThat(req.metadata()).hasSize(1).containsEntry("channel", "web");
   }

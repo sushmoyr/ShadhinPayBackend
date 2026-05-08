@@ -30,7 +30,12 @@ class VendorResponseTest {
   @Test
   void failed_response_carries_error_code() {
     VendorResponse resp =
-        new VendorResponse(VendorStatus.FAILED, null, null, "{\"error\":\"declined\"}", ErrorCode.MFS_ADAPTER_FAILURE);
+        new VendorResponse(
+            VendorStatus.FAILED,
+            null,
+            null,
+            "{\"error\":\"declined\"}",
+            ErrorCode.MFS_ADAPTER_FAILURE);
     assertThat(resp.status()).isEqualTo(VendorStatus.FAILED);
     assertThat(resp.errorCode()).isEqualTo(ErrorCode.MFS_ADAPTER_FAILURE);
     assertThat(resp.vendorTrxId()).isNull();
