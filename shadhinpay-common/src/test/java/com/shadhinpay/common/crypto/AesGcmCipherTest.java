@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.security.SecureRandom;
+import java.util.Base64;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
@@ -53,9 +54,9 @@ class AesGcmCipherTest {
   void tamperedCiphertext_fails() {
     AesGcmCipher cipher = new AesGcmCipher(randomKey());
     String ct = cipher.encrypt("payload", "mfa-secret");
-    char[] chars = ct.toCharArray();
-    chars[chars.length - 2] = chars[chars.length - 2] == 'A' ? 'B' : 'A';
-    String tampered = new String(chars);
+    byte[] raw = Base64.getDecoder().decode(ct);
+    raw[AesGcmCipher.IV_BYTES + 4] ^= 0xFF;
+    String tampered = Base64.getEncoder().encodeToString(raw);
     assertThatThrownBy(() -> cipher.decrypt(tampered, "mfa-secret"))
         .isInstanceOfAny(IllegalStateException.class, IllegalArgumentException.class);
   }
