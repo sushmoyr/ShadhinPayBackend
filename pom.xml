@@ -431,6 +431,7 @@
                     <exclude>**/dto/**</exclude>
                     <exclude>**/*Application.class</exclude>
                     <exclude>**/package-info.class</exclude>
+                    <exclude>**/config/OpenApiSecurityConfig.class</exclude>
                   </excludes>
                 </configuration>
               </execution>
