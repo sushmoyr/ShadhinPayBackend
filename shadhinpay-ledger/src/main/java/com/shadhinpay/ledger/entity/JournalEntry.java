@@ -4,11 +4,15 @@ import com.shadhinpay.common.entity.Auditable;
 import com.shadhinpay.ledger.usecase.JournalEntryRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -35,6 +39,9 @@ public class JournalEntry extends Auditable {
 
   @Column(name = "occurred_at", nullable = false)
   private Instant occurredAt;
+
+  @OneToMany(mappedBy = "journal", fetch = FetchType.LAZY)
+  private List<Posting> postings = new ArrayList<>();
 
   public JournalEntry(JournalEntryRequest request) {
     this.sourceType = request.sourceType();

@@ -15,6 +15,10 @@ public enum LedgerAccountType {
     this.debitSign = debitSign;
   }
 
+  public int debitSign() {
+    return debitSign;
+  }
+
   /**
    * Calculates the new balance after applying a posting.
    *
