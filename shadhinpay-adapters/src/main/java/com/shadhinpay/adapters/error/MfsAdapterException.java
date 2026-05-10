@@ -19,4 +19,13 @@ public class MfsAdapterException extends ApiOperationException {
   public MfsAdapterException(String message) {
     super(message, ErrorCode.MFS_ADAPTER_FAILURE, HttpStatus.BAD_GATEWAY);
   }
+
+  public MfsAdapterException(ErrorCode code, String message) {
+    super(message, code, HttpStatus.BAD_GATEWAY);
+  }
+
+  public MfsAdapterException(ErrorCode code, String message, Throwable cause) {
+    super(message, code, HttpStatus.BAD_GATEWAY);
+    this.initCause(cause);
+  }
 }

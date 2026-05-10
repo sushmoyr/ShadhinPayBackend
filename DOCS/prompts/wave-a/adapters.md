@@ -5,6 +5,7 @@
 > **Read first (every sub-prompt):** the [Wave A index](../PHASE_1_WAVE_A_PROMPTS.md) — cross-cutting decisions.
 
 Sub-prompts:
+
 1. [5a — MockAdapter + RedisTokenService](#prompt-5a--adapters-mockadapter--redistokenservice)
 2. [5b — Resilience4j + WireMock harness](#prompt-5b--adapters-resilience4j--wiremock-harness)
 
@@ -115,7 +116,7 @@ Output: file tree, sample Redis key trace from a token-fetch, distributed-lock t
 
 ## Prompt 5b — adapters Resilience4j + WireMock harness
 
-```
+```markdown
 You are completing the `shadhinpay-adapters` Wave A scope on branch `phase-1/adapters`. Prompt 5a is committed. Your sub-scope: Resilience4j circuit-breaker wiring per vendor, the `AdapterResilience` helper, the `VendorWireMockExtension` test harness Wave C agents will reuse, and the final coverage push.
 
 `resilience4j-spring-boot3` is already in root pom from Phase 0. You don't need to add it.
