@@ -77,6 +77,29 @@ class RecordJournalEntryUseCaseImplTest {
     verify(journalEntryRepository, never()).save(any());
   }
 
+  @Test
+  void testValidationThrowsOnCurrencyMismatch() {
+    when(journalEntryRepository.existsBySourceTypeAndSourceId("PAYMENT", "123")).thenReturn(false);
+
+    JournalEntryRequest req =
+        new JournalEntryRequest(
+            "PAYMENT",
+            "123",
+            "Test",
+            List.of(
+                new PostingRequest(
+                    UUID.randomUUID(), Money.of(10, "BDT"), PostingRequest.Type.DEBIT),
+                new PostingRequest(
+                    UUID.randomUUID(), Money.of(-10, "USD"), PostingRequest.Type.CREDIT)),
+            Instant.now());
+
+    assertThatThrownBy(() -> useCase.execute(req))
+        .isInstanceOf(InvalidOperationStateException.class)
+        .hasMessageContaining("Currency mismatch in journal postings");
+
+    verify(journalEntryRepository, never()).save(any());
+  }
+
   @Property(tries = 1)
   void shardSelectorChiSquareTest() {
     int[] shardCounts = new int[10];

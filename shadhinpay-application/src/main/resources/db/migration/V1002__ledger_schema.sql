@@ -9,24 +9,23 @@ CREATE TABLE ledger_accounts (
     currency VARCHAR(3) NOT NULL DEFAULT 'BDT',
     balance NUMERIC(19,4) NOT NULL DEFAULT 0,
     version BIGINT NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 );
 
--- Note: Using Postgres 15+ UNIQUE NULLS NOT DISTINCT
--- This correctly treats NULL owner_id values as equal for system accounts,
--- ensuring we only have one account per code+shard for the system.
+-- Unique constraint for accounts: one account per owner/code/shard/currency.
+-- For system accounts (owner_id is NULL), we use a sentinel UUID to ensure uniqueness.
 CREATE UNIQUE INDEX uk_ledger_accounts_owner_code_shard_curr
-    ON ledger_accounts (owner_id NULLS NOT DISTINCT, code, shard_id, currency);
+    ON ledger_accounts (COALESCE(owner_id, '00000000-0000-0000-0000-000000000000'), code, shard_id, currency);
 
 CREATE TABLE journal_entries (
     id UUID PRIMARY KEY,
     source_type VARCHAR(32) NOT NULL,
     source_id VARCHAR(128) NOT NULL,
     description TEXT NOT NULL,
-    occurred_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL,
+    occurred_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
     CONSTRAINT uk_journal_entries_source UNIQUE (source_type, source_id)
 );
 
@@ -37,7 +36,7 @@ CREATE TABLE postings (
     amount NUMERIC(19,4) NOT NULL,
     type VARCHAR(8) NOT NULL,
     currency VARCHAR(3) NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL
+    created_at TIMESTAMP NOT NULL
 );
 
 CREATE INDEX idx_postings_account_id_created_at ON postings (account_id, created_at);

@@ -19,7 +19,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "ledger_accounts")
+@Table(
+    name = "ledger_accounts",
+    indexes = {
+      @jakarta.persistence.Index(
+          name = "uk_ledger_accounts_owner_code_shard_curr",
+          columnList = "owner_id, code, shard_id, currency",
+          unique = true)
+    })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class LedgerAccount extends Auditable {

@@ -32,9 +32,6 @@ public class GetAccountBalanceUseCaseImpl implements GetAccountBalanceUseCase {
     if (SYSTEM_ACCOUNT_CODES.contains(accountCode)) {
       List<LedgerAccount> shards =
           ledgerAccountRepository.findByCodeAndCurrency(accountCode, DEFAULT_CURRENCY);
-      if (shards.isEmpty()) {
-        throw new ResourceNotFoundException("System account not found: " + accountCode);
-      }
       Money total = Money.zero(DEFAULT_CURRENCY);
       for (LedgerAccount shard : shards) {
         total = total.add(shard.getBalance());

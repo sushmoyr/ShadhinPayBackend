@@ -19,6 +19,10 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.transaction.annotation.Transactional;
 
 @UseCase
@@ -34,6 +38,10 @@ public class RecordJournalEntryUseCaseImpl implements RecordJournalEntryUseCase 
   private static final String DEFAULT_CURRENCY = "BDT";
 
   @Override
+  @Retryable(
+      retryFor = ObjectOptimisticLockingFailureException.class,
+      maxAttempts = 3,
+      backoff = @Backoff(delay = 100, multiplier = 2, random = true))
   @Transactional
   public void execute(JournalEntryRequest request) {
     if (journalEntryRepository.existsBySourceTypeAndSourceId(
@@ -62,18 +70,29 @@ public class RecordJournalEntryUseCaseImpl implements RecordJournalEntryUseCase 
     }
   }
 
+  @Recover
+  public void recoverFromOptimisticLocking(
+      ObjectOptimisticLockingFailureException e, JournalEntryRequest request) {
+    throw new InvalidOperationStateException("Concurrent ledger update — please retry");
+  }
+
   private void validateZeroSum(JournalEntryRequest request) {
     Money sum = Money.zero(DEFAULT_CURRENCY);
-    for (PostingRequest p : request.postings()) {
-      // The amount is already signed (+ for debit, - for credit)
-      sum = sum.add(p.amount());
+    try {
+      for (PostingRequest p : request.postings()) {
+        // The amount is already signed (+ for debit, - for credit)
+        sum = sum.add(p.amount());
+      }
+    } catch (IllegalArgumentException e) {
+      throw new InvalidOperationStateException(
+          "Currency mismatch in journal postings: " + e.getMessage());
     }
 
     if (!sum.isZero()) {
       throw new InvalidOperationStateException(
           String.format(
               "Journal postings do not sum to zero for source %s:%s. Residual: %s",
-              request.sourceType(), request.sourceId(), sum.amount().toPlainString()));
+              request.sourceType(), request.sourceId(), sum.amount()));
     }
   }
 

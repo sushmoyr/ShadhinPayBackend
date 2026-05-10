@@ -18,10 +18,32 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@SpringBootTest
-@Testcontainers
+@SpringBootTest(properties = {
+    "spring.datasource.url=jdbc:h2:mem:ledger_e2e;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
+    "spring.datasource.driver-class-name=org.h2.Driver",
+    "spring.datasource.username=sa",
+    "spring.datasource.password=",
+    "spring.flyway.enabled=false",
+    "spring.jpa.hibernate.ddl-auto=create-drop",
+    "spring.jpa.defer-datasource-initialization=true",
+    "spring.modulith.events.jdbc.schema-initialization.enabled=true",
+    "spring.sql.init.mode=always",
+    "spring.sql.init.data-locations=classpath:ledger-test-seed.sql",
+    "shadhinpay.auth.token-secret=test-secret-test-secret-test-secret-test-secret",
+    "shadhinpay.auth.token-expiration-ms=3600000",
+    "REDIS_HOST=localhost",
+    "REDIS_PASSWORD="
+})
 @ActiveProfiles("test")
-class LedgerEndToEndIT {
+public class LedgerEndToEndIT {
+
+  @org.springframework.boot.test.context.TestConfiguration
+  static class TestConfig {
+    @org.springframework.context.annotation.Bean
+    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
+      return org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance();
+    }
+  }
 
   @Autowired private RecordJournalEntryUseCase recordUseCase;
   @Autowired private GetAccountBalanceUseCase getBalanceUseCase;

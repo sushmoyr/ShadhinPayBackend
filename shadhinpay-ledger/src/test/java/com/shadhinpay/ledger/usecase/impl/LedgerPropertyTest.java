@@ -141,7 +141,7 @@ class LedgerPropertyTest {
             "ADJUSTMENT", UUID.randomUUID().toString(), "Mismatch Test", postings, Instant.now());
 
     assertThatThrownBy(() -> useCase.execute(req))
-        .isInstanceOf(IllegalArgumentException.class)
+        .isInstanceOf(com.shadhinpay.common.error.InvalidOperationStateException.class)
         .hasMessageContaining("Currency mismatch");
   }
 

@@ -230,6 +230,17 @@
         <artifactId>h2</artifactId>
         <version>2.3.232</version>
       </dependency>
+      <!-- Spring Retry & Aspects -->
+      <dependency>
+        <groupId>org.springframework.retry</groupId>
+        <artifactId>spring-retry</artifactId>
+        <version>2.0.11</version>
+      </dependency>
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-aspects</artifactId>
+        <version>6.1.14</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
