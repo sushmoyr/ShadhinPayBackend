@@ -13,7 +13,6 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -47,7 +46,7 @@ class ProvisioningRepositoryIntegrationTest {
     registry.add("spring.datasource.password", postgres::getPassword);
   }
 
-  @Configuration
+  @org.springframework.boot.test.context.TestConfiguration
   @EnableAutoConfiguration
   @EntityScan(basePackages = "pay.conflux.backend.provisioning.entity")
   @EnableJpaRepositories(basePackages = "pay.conflux.backend.provisioning.repository")

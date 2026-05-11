@@ -16,6 +16,7 @@ import pay.conflux.backend.provisioning.entity.ApiKey;
 import pay.conflux.backend.provisioning.entity.Business;
 import pay.conflux.backend.provisioning.repository.ApiKeyRepository;
 import pay.conflux.backend.provisioning.repository.BusinessRepository;
+import pay.conflux.backend.provisioning.usecase.ApiKeyCacheEvictor;
 import pay.conflux.backend.provisioning.usecase.BusinessContext;
 import pay.conflux.backend.provisioning.usecase.GetBusinessByApiKeyUseCase;
 
@@ -33,7 +34,8 @@ import pay.conflux.backend.provisioning.usecase.GetBusinessByApiKeyUseCase;
 @Slf4j
 @UseCase
 @RequiredArgsConstructor
-public class GetBusinessByApiKeyUseCaseImpl implements GetBusinessByApiKeyUseCase {
+public class GetBusinessByApiKeyUseCaseImpl
+    implements GetBusinessByApiKeyUseCase, ApiKeyCacheEvictor {
 
   static final Duration CACHE_TTL = Duration.ofSeconds(300);
 
@@ -112,6 +114,7 @@ public class GetBusinessByApiKeyUseCaseImpl implements GetBusinessByApiKeyUseCas
   }
 
   /** Evicts a single API key entry. Used by key rotation / revocation flows. */
+  @Override
   public void evictApiKeyByHash(UUID businessId, String keyHash) {
     String key = ProvisioningCacheKeys.apiKey(keyHash);
     redisTemplate.delete(key);
