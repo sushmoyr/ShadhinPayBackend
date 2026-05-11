@@ -13,12 +13,14 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 @Primary
+@ConditionalOnBean(StringRedisTemplate.class)
 public class RedisTokenService implements TokenService {
 
   private static final Logger log = LoggerFactory.getLogger(RedisTokenService.class);

@@ -22,23 +22,23 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.modulith.test.ApplicationModuleTest;
-import org.springframework.modulith.test.PublishedEvents;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@ApplicationModuleTest // Ensures events are captured
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @Testcontainers(disabledWithoutDocker = true)
 @DisabledIfSystemProperty(named = "skipDocker", matches = "true")
 @ActiveProfiles("test")
+@RecordApplicationEvents
 class IdentityIntegrationTest {
 
   @Container
@@ -139,7 +139,7 @@ class IdentityIntegrationTest {
 
   @Test
   @WithMockUser(authorities = "ADMIN_MANAGER")
-  void kycLifecycleAndAdminVerification(PublishedEvents events) throws Exception {
+  void kycLifecycleAndAdminVerification(ApplicationEvents events) throws Exception {
     String identifier = "kyc-test@example.com";
     RegisterMerchantRequest request =
         new RegisterMerchantRequest(identifier, "password123", "KYC Test Merchant");
@@ -186,14 +186,14 @@ class IdentityIntegrationTest {
         .andExpect(status().isOk());
 
     // 4. Assert Event Publication
-    var verifiedEvents = events.ofType(MerchantVerifiedEvent.class);
+    var verifiedEvents = events.stream(MerchantVerifiedEvent.class).toList();
     assertThat(verifiedEvents).hasSize(1);
-    assertThat(verifiedEvents.iterator().next().merchantProfileId()).isEqualTo(profileId);
+    assertThat(verifiedEvents.get(0).merchantProfileId()).isEqualTo(profileId);
   }
 
   @Test
   @WithMockUser(authorities = "ADMIN_MANAGER")
-  void blockUserIsIdempotentAndPublishesEventOnce(PublishedEvents events) throws Exception {
+  void blockUserIsIdempotentAndPublishesEventOnce(ApplicationEvents events) throws Exception {
     String identifier = "block-test@example.com";
     RegisterMerchantRequest request =
         new RegisterMerchantRequest(identifier, "password123", "Block Test Merchant");
@@ -220,9 +220,9 @@ class IdentityIntegrationTest {
                 .content(objectMapper.writeValueAsString(blockRequest)))
         .andExpect(status().isOk());
 
-    var blockedEvents = events.ofType(UserBlockedEvent.class);
+    var blockedEvents = events.stream(UserBlockedEvent.class).toList();
     assertThat(blockedEvents).hasSize(1);
-    assertThat(blockedEvents.iterator().next().reason()).isEqualTo("Suspicious activity");
+    assertThat(blockedEvents.get(0).reason()).isEqualTo("Suspicious activity");
 
     // 2. Block user second time (idempotent)
     mockMvc
@@ -233,7 +233,7 @@ class IdentityIntegrationTest {
         .andExpect(status().isOk());
 
     // Event size should still be 1
-    blockedEvents = events.ofType(UserBlockedEvent.class);
+    blockedEvents = events.stream(UserBlockedEvent.class).toList();
     assertThat(blockedEvents).hasSize(1);
   }
 }
