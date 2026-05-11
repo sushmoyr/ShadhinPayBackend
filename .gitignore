@@ -54,3 +54,13 @@ openapi.json
 
 # jqwik property-test database (generated, per-module)
 .jqwik-database
+
+# Build / test scratch output
+*_output.txt
+commit_msg.txt
+err.txt
+
+# AI tooling scratch
+.deepseek/
+GEMINI.md
+**/GEMINI.md
