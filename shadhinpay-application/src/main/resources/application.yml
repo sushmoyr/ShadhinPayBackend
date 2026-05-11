@@ -36,6 +36,12 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+shadhinpay:
+  quota:
+    free-per-month: 10
+    pending-ttl-seconds: 1800
+    final-ttl-seconds: 3024000
+
 ---
 spring:
   config:

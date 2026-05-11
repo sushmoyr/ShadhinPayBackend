@@ -5,9 +5,9 @@ import java.util.Objects;
 /**
  * Read-only snapshot of a merchant's quota state for a given billing period.
  *
- * <p>Returned by {@link GetUsageUseCase}. Counts include both confirmed and pending reservations —
- * callers needing a strict "billed" figure should compare against the historical {@code QuotaUsage}
- * aggregate persisted at month rollover.
+ * <p>Returned by {@link GetUsageUseCase}. Counts confirmed (final) reservations only — pending
+ * soft-reservations are not surfaced to callers, so the figure is stable against in-flight payments
+ * that may still release.
  *
  * @param usedCount transactions consumed against the free + billable tiers in {@link #period}
  * @param freeRemaining transactions still available in the free tier; {@code 0} once exhausted
