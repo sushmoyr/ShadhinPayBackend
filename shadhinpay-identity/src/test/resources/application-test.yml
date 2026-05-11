@@ -1,0 +1,11 @@
+shadhinpay:
+  auth:
+    token-secret: dev-only-test-secret-do-not-use-in-prod-32bytes!
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate.type.preferred_enum_jdbc_type: VARCHAR
