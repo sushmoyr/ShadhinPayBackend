@@ -13,14 +13,14 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-class DefaultUpsertMerchantRiskProfileUseCaseTest {
+class UpsertMerchantRiskProfileUseCaseImplTest {
 
   @Test
   void shouldUpsertProfile() {
     MerchantRiskProfileRepository repo = mock(MerchantRiskProfileRepository.class);
     MerchantRiskProfileMapper mapper = new MerchantRiskProfileMapper();
-    DefaultUpsertMerchantRiskProfileUseCase useCase =
-        new DefaultUpsertMerchantRiskProfileUseCase(repo, mapper);
+    UpsertMerchantRiskProfileUseCaseImpl useCase =
+        new UpsertMerchantRiskProfileUseCaseImpl(repo, mapper);
 
     UUID id = UUID.randomUUID();
     UpsertMerchantRiskProfileRequest req =

@@ -1,26 +1,22 @@
 package com.shadhinpay.risk.usecase.impl;
 
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.error.ResourceNotFoundException;
-import com.shadhinpay.risk.engine.CompiledRuleCache;
 import com.shadhinpay.risk.entity.RiskRule;
+import com.shadhinpay.risk.events.RiskRuleChangedEvent;
 import com.shadhinpay.risk.repository.RiskRuleRepository;
 import com.shadhinpay.risk.usecase.internal.DisableRiskRuleUseCase;
 import java.util.UUID;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
-public class DefaultDisableRiskRuleUseCase implements DisableRiskRuleUseCase {
+@UseCase
+@RequiredArgsConstructor
+public class DisableRiskRuleUseCaseImpl implements DisableRiskRuleUseCase {
 
   private final RiskRuleRepository riskRuleRepository;
-  private final CompiledRuleCache compiledRuleCache;
-
-  public DefaultDisableRiskRuleUseCase(
-      RiskRuleRepository riskRuleRepository, @Lazy CompiledRuleCache compiledRuleCache) {
-    this.riskRuleRepository = riskRuleRepository;
-    this.compiledRuleCache = compiledRuleCache;
-  }
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -32,8 +28,10 @@ public class DefaultDisableRiskRuleUseCase implements DisableRiskRuleUseCase {
             .orElseThrow(() -> new ResourceNotFoundException("RiskRule", id));
 
     rule.setActive(false);
-    rule.setDeleted(true); // Soft delete as per requirements
+    rule.setDeleted(true);
     riskRuleRepository.save(rule);
-    compiledRuleCache.invalidate(rule.getId());
+
+    eventPublisher.publishEvent(
+        new RiskRuleChangedEvent(rule.getId(), RiskRuleChangedEvent.ChangeKind.DISABLED));
   }
 }

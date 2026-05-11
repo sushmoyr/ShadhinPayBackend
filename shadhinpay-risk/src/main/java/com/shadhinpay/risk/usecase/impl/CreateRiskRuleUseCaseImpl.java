@@ -1,35 +1,25 @@
 package com.shadhinpay.risk.usecase.impl;
 
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.error.DuplicateResourceException;
 import com.shadhinpay.risk.dto.CreateRiskRuleRequest;
 import com.shadhinpay.risk.dto.RiskRuleDto;
-import com.shadhinpay.risk.engine.CompiledRuleCache;
-import com.shadhinpay.risk.engine.SafeSpelEvaluator;
 import com.shadhinpay.risk.entity.RiskRule;
+import com.shadhinpay.risk.events.RiskRuleChangedEvent;
 import com.shadhinpay.risk.mapper.RiskRuleMapper;
 import com.shadhinpay.risk.repository.RiskRuleRepository;
 import com.shadhinpay.risk.usecase.internal.CreateRiskRuleUseCase;
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
-public class DefaultCreateRiskRuleUseCase implements CreateRiskRuleUseCase {
+@UseCase
+@RequiredArgsConstructor
+public class CreateRiskRuleUseCaseImpl implements CreateRiskRuleUseCase {
 
   private final RiskRuleRepository riskRuleRepository;
   private final RiskRuleMapper riskRuleMapper;
-  private final CompiledRuleCache compiledRuleCache;
-  private final SafeSpelEvaluator safeSpelEvaluator;
-
-  public DefaultCreateRiskRuleUseCase(
-      RiskRuleRepository riskRuleRepository,
-      RiskRuleMapper riskRuleMapper,
-      CompiledRuleCache compiledRuleCache,
-      SafeSpelEvaluator safeSpelEvaluator) {
-    this.riskRuleRepository = riskRuleRepository;
-    this.riskRuleMapper = riskRuleMapper;
-    this.compiledRuleCache = compiledRuleCache;
-    this.safeSpelEvaluator = safeSpelEvaluator;
-  }
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -46,10 +36,8 @@ public class DefaultCreateRiskRuleUseCase implements CreateRiskRuleUseCase {
 
     RiskRule saved = riskRuleRepository.save(rule);
 
-    org.springframework.expression.Expression expr = safeSpelEvaluator.compile(saved);
-    if (expr != null) {
-      compiledRuleCache.put(saved, expr);
-    }
+    eventPublisher.publishEvent(
+        new RiskRuleChangedEvent(saved.getId(), RiskRuleChangedEvent.ChangeKind.CREATED));
 
     return riskRuleMapper.toDto(saved);
   }

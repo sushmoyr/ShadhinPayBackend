@@ -42,6 +42,7 @@ class EvaluateTransactionUseCaseImplTest {
   private SafeSpelEvaluator safeSpelEvaluator;
   private RiskEvaluationRepository riskEvaluationRepository;
   private MerchantRiskProfileRepository merchantRiskProfileRepository;
+  private com.fasterxml.jackson.databind.ObjectMapper objectMapper;
   private EvaluateTransactionUseCaseImpl useCase;
 
   @BeforeEach
@@ -52,6 +53,7 @@ class EvaluateTransactionUseCaseImplTest {
     safeSpelEvaluator = mock(SafeSpelEvaluator.class);
     riskEvaluationRepository = mock(RiskEvaluationRepository.class);
     merchantRiskProfileRepository = mock(MerchantRiskProfileRepository.class);
+    objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
     useCase =
         new EvaluateTransactionUseCaseImpl(
             compiledRuleCache,
@@ -60,6 +62,7 @@ class EvaluateTransactionUseCaseImplTest {
             safeSpelEvaluator,
             riskEvaluationRepository,
             merchantRiskProfileRepository,
+            objectMapper,
             FLAG_THRESHOLD);
 
     // Default: nothing is blacklisted
@@ -231,6 +234,77 @@ class EvaluateTransactionUseCaseImplTest {
       // Should reach rule evaluation (even if no rules match)
       assertNotNull(result);
       verify(compiledRuleCache).snapshot();
+    }
+
+    @Test
+    @DisplayName("customLimits JSON overrides trust-level defaults")
+    void customLimitsOverrideDefaults() {
+      com.shadhinpay.risk.entity.MerchantRiskProfile profile =
+          new com.shadhinpay.risk.entity.MerchantRiskProfile();
+      profile.setMerchantId(MERCHANT_ID);
+      profile.setTrustLevel(com.shadhinpay.risk.entity.TrustLevel.NEW);
+      profile.setCustomLimits("{\"per_merchant_minute\": 1}");
+      when(merchantRiskProfileRepository.findByMerchantId(MERCHANT_ID))
+          .thenReturn(Optional.of(profile));
+      // PER_MERCHANT/minute returns 2 → exceeds custom limit of 1
+      when(velocityCounter.incrementAndGet(MERCHANT_ID, VelocityDimension.PER_MERCHANT, 60L))
+          .thenReturn(2L);
+
+      RiskDecision result = useCase.execute(makeContext());
+
+      assertEquals(RiskDecision.Action.BLOCK, result.action());
+      assertTrue(result.reason().contains("PER_MERCHANT/minute"));
+    }
+
+    @Test
+    @DisplayName("malformed customLimits JSON falls back to trust-level defaults")
+    void malformedCustomLimitsFallback() {
+      com.shadhinpay.risk.entity.MerchantRiskProfile profile =
+          new com.shadhinpay.risk.entity.MerchantRiskProfile();
+      profile.setMerchantId(MERCHANT_ID);
+      profile.setTrustLevel(com.shadhinpay.risk.entity.TrustLevel.NEW);
+      profile.setCustomLimits("{not valid json");
+      when(merchantRiskProfileRepository.findByMerchantId(MERCHANT_ID))
+          .thenReturn(Optional.of(profile));
+
+      RiskDecision result = useCase.execute(makeContext());
+
+      // Falls back to NEW defaults (5/min) — within limits since counter returns 1
+      assertNotEquals(RiskDecision.Action.BLOCK, result.action());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(
+        value = com.shadhinpay.risk.entity.TrustLevel.class)
+    @DisplayName("each TrustLevel resolves to its own defaults")
+    void eachTrustLevelHasDistinctDefaults(com.shadhinpay.risk.entity.TrustLevel level) {
+      com.shadhinpay.risk.entity.MerchantRiskProfile profile =
+          new com.shadhinpay.risk.entity.MerchantRiskProfile();
+      profile.setMerchantId(MERCHANT_ID);
+      profile.setTrustLevel(level);
+      when(merchantRiskProfileRepository.findByMerchantId(MERCHANT_ID))
+          .thenReturn(Optional.of(profile));
+
+      RiskDecision result = useCase.execute(makeContext());
+
+      // Counter returns 1 — well within any trust level's defaults
+      assertNotEquals(RiskDecision.Action.BLOCK, result.action());
+    }
+
+    @Test
+    @DisplayName("blank customLimits uses trust-level defaults")
+    void blankCustomLimitsFallback() {
+      com.shadhinpay.risk.entity.MerchantRiskProfile profile =
+          new com.shadhinpay.risk.entity.MerchantRiskProfile();
+      profile.setMerchantId(MERCHANT_ID);
+      profile.setTrustLevel(com.shadhinpay.risk.entity.TrustLevel.VIP);
+      profile.setCustomLimits("   ");
+      when(merchantRiskProfileRepository.findByMerchantId(MERCHANT_ID))
+          .thenReturn(Optional.of(profile));
+
+      RiskDecision result = useCase.execute(makeContext());
+
+      assertNotEquals(RiskDecision.Action.BLOCK, result.action());
     }
   }
 

@@ -98,15 +98,24 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
+    properties:
+      # Hibernate 6 with PostgreSQL dialect defaults to native enum DDL for @Enumerated(STRING);
+      # H2 in PostgreSQL mode can't parse that, so force varchar emission here.
+      hibernate.type.preferred_enum_jdbc_type: VARCHAR
   flyway:
     enabled: false
   data:
     redis:
+      # Lettuce defers the TCP connection until first use; the OpenAPI scrape only
+      # hits /v3/api-docs so the stub host below is never contacted. The risk module's
+      # BlacklistCache + VelocityCounter beans still wire up cleanly because
+      # StringRedisTemplate is available.
+      host: localhost
+      port: 16379
       repositories:
         enabled: false
   autoconfigure:
     exclude:
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
   modulith:
     events:

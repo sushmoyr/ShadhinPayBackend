@@ -149,6 +149,7 @@ class RiskPropertyTest {
             safeSpelEvaluator,
             evalRepo,
             profileRepo,
+            new com.fasterxml.jackson.databind.ObjectMapper(),
             FLAG_THRESHOLD);
 
     engine.execute(ctx);
@@ -254,6 +255,7 @@ class RiskPropertyTest {
         safeSpelEvaluator,
         evalRepo,
         profileRepo,
+        new com.fasterxml.jackson.databind.ObjectMapper(),
         FLAG_THRESHOLD);
   }
 }

@@ -6,22 +6,21 @@ import com.shadhinpay.risk.entity.RiskEvaluation;
 import com.shadhinpay.risk.repository.RiskEvaluationRepository;
 import com.shadhinpay.risk.usecase.RiskDecision;
 import com.shadhinpay.risk.usecase.internal.ListPendingCasesUseCase;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 @UseCase
-public class DefaultListPendingCasesUseCase implements ListPendingCasesUseCase {
+@RequiredArgsConstructor
+public class ListPendingCasesUseCaseImpl implements ListPendingCasesUseCase {
 
   private final RiskEvaluationRepository riskEvaluationRepository;
 
-  public DefaultListPendingCasesUseCase(RiskEvaluationRepository riskEvaluationRepository) {
-    this.riskEvaluationRepository = riskEvaluationRepository;
-  }
-
   @Override
-  public Page<RiskCaseDto> execute(Pageable pageable) {
+  public Page<RiskCaseDto> execute(RiskDecision.Action status, Pageable pageable) {
+    RiskDecision.Action effective = status == null ? RiskDecision.Action.FLAG : status;
     return riskEvaluationRepository
-        .findByDecisionAndReviewDecisionIsNull(RiskDecision.Action.FLAG, pageable)
+        .findByDecisionAndReviewDecisionIsNull(effective, pageable)
         .map(this::toDto);
   }
 

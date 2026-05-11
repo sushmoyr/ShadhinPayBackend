@@ -5,6 +5,7 @@ import static org.mockito.Mockito.*;
 
 import com.shadhinpay.risk.entity.RiskRule;
 import com.shadhinpay.risk.repository.RiskRuleRepository;
+import com.shadhinpay.risk.usecase.internal.DisableRiskRuleUseCase;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,17 +20,18 @@ class CompiledRuleCacheTest {
 
   @Mock private RiskRuleRepository riskRuleRepository;
   @Mock private SafeSpelEvaluator safeSpelEvaluator;
+  @Mock private DisableRiskRuleUseCase disableRiskRuleUseCase;
   @Mock private Expression expression;
 
   private CompiledRuleCache cache;
 
   @BeforeEach
   void setUp() {
-    cache = new CompiledRuleCache(riskRuleRepository, safeSpelEvaluator);
+    cache = new CompiledRuleCache(riskRuleRepository, safeSpelEvaluator, disableRiskRuleUseCase);
   }
 
   @Test
-  void shouldLoadValidRulesAndIgnoreInvalid() {
+  void shouldLoadValidRulesAndDisableInvalid() {
     RiskRule valid = new RiskRule();
     valid.setId(UUID.randomUUID());
     valid.setExpression("valid");
@@ -46,6 +48,8 @@ class CompiledRuleCacheTest {
 
     assertThat(cache.snapshot()).hasSize(1);
     assertThat(cache.snapshot().iterator().next().rule()).isEqualTo(valid);
+    verify(disableRiskRuleUseCase).execute(invalid.getId());
+    verify(disableRiskRuleUseCase, never()).execute(valid.getId());
   }
 
   @Test

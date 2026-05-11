@@ -7,39 +7,35 @@ import static org.mockito.Mockito.*;
 import com.shadhinpay.common.error.ResourceNotFoundException;
 import com.shadhinpay.risk.dto.RiskRuleDto;
 import com.shadhinpay.risk.dto.UpdateRiskRuleRequest;
-import com.shadhinpay.risk.engine.CompiledRuleCache;
-import com.shadhinpay.risk.engine.SafeSpelEvaluator;
 import com.shadhinpay.risk.entity.RiskRule;
 import com.shadhinpay.risk.entity.RuleAction;
+import com.shadhinpay.risk.events.RiskRuleChangedEvent;
 import com.shadhinpay.risk.mapper.RiskRuleMapper;
 import com.shadhinpay.risk.repository.RiskRuleRepository;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.expression.Expression;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 
-class DefaultUpdateRiskRuleUseCaseTest {
+class UpdateRiskRuleUseCaseImplTest {
 
   private RiskRuleRepository riskRuleRepository;
   private RiskRuleMapper riskRuleMapper;
-  private CompiledRuleCache compiledRuleCache;
-  private SafeSpelEvaluator safeSpelEvaluator;
-  private DefaultUpdateRiskRuleUseCase useCase;
+  private ApplicationEventPublisher eventPublisher;
+  private UpdateRiskRuleUseCaseImpl useCase;
 
   @BeforeEach
   void setUp() {
     riskRuleRepository = mock(RiskRuleRepository.class);
     riskRuleMapper = new RiskRuleMapper();
-    compiledRuleCache = mock(CompiledRuleCache.class);
-    safeSpelEvaluator = mock(SafeSpelEvaluator.class);
-    useCase =
-        new DefaultUpdateRiskRuleUseCase(
-            riskRuleRepository, riskRuleMapper, compiledRuleCache, safeSpelEvaluator);
+    eventPublisher = mock(ApplicationEventPublisher.class);
+    useCase = new UpdateRiskRuleUseCaseImpl(riskRuleRepository, riskRuleMapper, eventPublisher);
   }
 
   @Test
-  void shouldUpdateRuleSuccessfully() {
+  void shouldUpdateRuleAndPublishUpdatedEvent() {
     UUID id = UUID.randomUUID();
     UpdateRiskRuleRequest req = new UpdateRiskRuleRequest("expr2", 20, RuleAction.FLAG);
     RiskRule rule = new RiskRule();
@@ -48,14 +44,17 @@ class DefaultUpdateRiskRuleUseCaseTest {
 
     when(riskRuleRepository.findById(id)).thenReturn(Optional.of(rule));
     when(riskRuleRepository.save(any(RiskRule.class))).thenReturn(rule);
-    when(safeSpelEvaluator.compile(any())).thenReturn(mock(Expression.class));
 
     RiskRuleDto res = useCase.execute(id, req);
 
     assertNotNull(res);
     assertEquals("expr2", rule.getExpression());
     verify(riskRuleRepository, times(1)).save(rule);
-    verify(compiledRuleCache).put(any(), any());
+    ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+    verify(eventPublisher).publishEvent(captor.capture());
+    Object captured = captor.getValue();
+    assertInstanceOf(RiskRuleChangedEvent.class, captured);
+    assertEquals(RiskRuleChangedEvent.ChangeKind.UPDATED, ((RiskRuleChangedEvent) captured).kind());
   }
 
   @Test
@@ -66,5 +65,6 @@ class DefaultUpdateRiskRuleUseCaseTest {
     when(riskRuleRepository.findById(id)).thenReturn(Optional.empty());
 
     assertThrows(ResourceNotFoundException.class, () -> useCase.execute(id, req));
+    verifyNoInteractions(eventPublisher);
   }
 }

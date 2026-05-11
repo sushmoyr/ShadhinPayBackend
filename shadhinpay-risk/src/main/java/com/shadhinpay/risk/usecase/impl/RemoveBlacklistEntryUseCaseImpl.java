@@ -1,25 +1,22 @@
 package com.shadhinpay.risk.usecase.impl;
 
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.error.ResourceNotFoundException;
-import com.shadhinpay.risk.engine.BlacklistCache;
 import com.shadhinpay.risk.entity.BlacklistEntry;
+import com.shadhinpay.risk.events.BlacklistEntryChangedEvent;
 import com.shadhinpay.risk.repository.BlacklistEntryRepository;
 import com.shadhinpay.risk.usecase.internal.RemoveBlacklistEntryUseCase;
 import java.util.UUID;
-import org.springframework.stereotype.Service;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
-public class DefaultRemoveBlacklistEntryUseCase implements RemoveBlacklistEntryUseCase {
+@UseCase
+@RequiredArgsConstructor
+public class RemoveBlacklistEntryUseCaseImpl implements RemoveBlacklistEntryUseCase {
 
   private final BlacklistEntryRepository blacklistEntryRepository;
-  private final BlacklistCache blacklistCache;
-
-  public DefaultRemoveBlacklistEntryUseCase(
-      BlacklistEntryRepository blacklistEntryRepository, BlacklistCache blacklistCache) {
-    this.blacklistEntryRepository = blacklistEntryRepository;
-    this.blacklistCache = blacklistCache;
-  }
+  private final ApplicationEventPublisher eventPublisher;
 
   @Override
   @Transactional
@@ -32,6 +29,9 @@ public class DefaultRemoveBlacklistEntryUseCase implements RemoveBlacklistEntryU
 
     entry.setDeleted(true);
     blacklistEntryRepository.save(entry);
-    blacklistCache.remove(entry.getType(), entry.getValue());
+
+    eventPublisher.publishEvent(
+        new BlacklistEntryChangedEvent(
+            entry.getType(), entry.getValue(), BlacklistEntryChangedEvent.ChangeKind.REMOVED));
   }
 }

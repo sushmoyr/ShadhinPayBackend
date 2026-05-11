@@ -20,12 +20,22 @@ public class BlacklistCache {
 
   @PostConstruct
   public void hydrate() {
-    doHydrate();
+    try {
+      doHydrate();
+    } catch (Exception e) {
+      log.warn(
+          "BlacklistCache startup hydration failed ({}); scheduledHydrate will retry every 5min",
+          e.getMessage());
+    }
   }
 
   @Scheduled(fixedRate = 300000)
   public void scheduledHydrate() {
-    doHydrate();
+    try {
+      doHydrate();
+    } catch (Exception e) {
+      log.warn("BlacklistCache scheduled hydration failed: {}", e.getMessage());
+    }
   }
 
   private void doHydrate() {

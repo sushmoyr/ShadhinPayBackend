@@ -25,7 +25,7 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(AdminRiskController.class)
+@WebMvcTest(AdminRiskControllerImpl.class)
 class AdminRiskControllerTest {
 
   @org.springframework.boot.SpringBootConfiguration
@@ -174,10 +174,10 @@ class AdminRiskControllerTest {
   @Test
   @WithMockUser(authorities = "ADMIN_MANAGER")
   void shouldListCases() throws Exception {
-    when(listPendingCasesUseCase.execute(any()))
+    when(listPendingCasesUseCase.execute(any(), any()))
         .thenReturn(org.springframework.data.domain.Page.empty());
     mockMvc.perform(get("/api/v1/admin/risk/cases")).andExpect(status().isOk());
-    verify(listPendingCasesUseCase).execute(any());
+    verify(listPendingCasesUseCase).execute(any(), any());
   }
 
   @Test

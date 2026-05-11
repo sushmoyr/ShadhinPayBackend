@@ -2,9 +2,12 @@ package com.shadhinpay.risk.usecase.impl;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
+import com.shadhinpay.common.error.InvalidOperationStateException;
 import com.shadhinpay.common.error.ResourceNotFoundException;
+import com.shadhinpay.common.security.AuthenticatedPrincipal;
 import com.shadhinpay.risk.dto.RiskCaseDto;
 import com.shadhinpay.risk.entity.RiskEvaluation;
 import com.shadhinpay.risk.repository.RiskEvaluationRepository;
@@ -13,27 +16,47 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @DisplayName("Case Management Use Cases")
 class CaseManagementUseCaseTest {
 
+  private static final UUID ADMIN_ID = UUID.randomUUID();
+
   private RiskEvaluationRepository riskEvaluationRepository;
-  private DefaultListPendingCasesUseCase listPendingCasesUseCase;
-  private DefaultApproveRiskCaseUseCase approveRiskCaseUseCase;
-  private DefaultRejectRiskCaseUseCase rejectRiskCaseUseCase;
+  private ListPendingCasesUseCaseImpl listPendingCasesUseCase;
+  private ApproveRiskCaseUseCaseImpl approveRiskCaseUseCase;
+  private RejectRiskCaseUseCaseImpl rejectRiskCaseUseCase;
 
   @BeforeEach
   void setUp() {
     riskEvaluationRepository = mock(RiskEvaluationRepository.class);
-    listPendingCasesUseCase = new DefaultListPendingCasesUseCase(riskEvaluationRepository);
-    approveRiskCaseUseCase = new DefaultApproveRiskCaseUseCase(riskEvaluationRepository);
-    rejectRiskCaseUseCase = new DefaultRejectRiskCaseUseCase(riskEvaluationRepository);
+    listPendingCasesUseCase = new ListPendingCasesUseCaseImpl(riskEvaluationRepository);
+    approveRiskCaseUseCase = new ApproveRiskCaseUseCaseImpl(riskEvaluationRepository);
+    rejectRiskCaseUseCase = new RejectRiskCaseUseCaseImpl(riskEvaluationRepository);
+
+    AuthenticatedPrincipal admin =
+        new AuthenticatedPrincipal(
+            ADMIN_ID,
+            AuthenticatedPrincipal.UserType.ADMIN,
+            null,
+            null,
+            AuthenticatedPrincipal.Environment.TEST);
+    SecurityContextHolder.getContext()
+        .setAuthentication(new UsernamePasswordAuthenticationToken(admin, null, List.of()));
+  }
+
+  @AfterEach
+  void tearDown() {
+    SecurityContextHolder.clearContext();
   }
 
   @Test
@@ -54,7 +77,8 @@ class CaseManagementUseCaseTest {
             eq(RiskDecision.Action.FLAG), any()))
         .thenReturn(page);
 
-    Page<RiskCaseDto> result = listPendingCasesUseCase.execute(PageRequest.of(0, 20));
+    Page<RiskCaseDto> result =
+        listPendingCasesUseCase.execute(RiskDecision.Action.FLAG, PageRequest.of(0, 20));
 
     assertNotNull(result);
     assertEquals(1, result.getTotalElements());
@@ -65,7 +89,21 @@ class CaseManagementUseCaseTest {
   }
 
   @Test
-  @DisplayName("approveCase records APPROVE decision")
+  @DisplayName("listPendingCases defaults to FLAG when status is null")
+  void listPendingCasesDefault() {
+    when(riskEvaluationRepository.findByDecisionAndReviewDecisionIsNull(
+            eq(RiskDecision.Action.FLAG), any()))
+        .thenReturn(new PageImpl<>(List.of()));
+
+    Page<RiskCaseDto> result = listPendingCasesUseCase.execute(null, PageRequest.of(0, 20));
+
+    assertNotNull(result);
+    verify(riskEvaluationRepository)
+        .findByDecisionAndReviewDecisionIsNull(eq(RiskDecision.Action.FLAG), any());
+  }
+
+  @Test
+  @DisplayName("approveCase records APPROVE decision with authenticated admin id")
   void approveCase() {
     UUID evaluationId = UUID.randomUUID();
     RiskEvaluation eval = new RiskEvaluation();
@@ -80,12 +118,12 @@ class CaseManagementUseCaseTest {
 
     assertEquals("APPROVE", eval.getReviewDecision());
     assertNotNull(eval.getReviewedAt());
-    assertNotNull(eval.getReviewedByAdminId());
+    assertEquals(ADMIN_ID, eval.getReviewedByAdminId());
     verify(riskEvaluationRepository).save(eval);
   }
 
   @Test
-  @DisplayName("rejectCase records REJECT decision")
+  @DisplayName("rejectCase records REJECT decision with authenticated admin id")
   void rejectCase() {
     UUID evaluationId = UUID.randomUUID();
     RiskEvaluation eval = new RiskEvaluation();
@@ -100,7 +138,7 @@ class CaseManagementUseCaseTest {
 
     assertEquals("REJECT", eval.getReviewDecision());
     assertNotNull(eval.getReviewedAt());
-    assertNotNull(eval.getReviewedByAdminId());
+    assertEquals(ADMIN_ID, eval.getReviewedByAdminId());
     verify(riskEvaluationRepository).save(eval);
   }
 
@@ -122,5 +160,15 @@ class CaseManagementUseCaseTest {
 
     assertThrows(
         ResourceNotFoundException.class, () -> rejectRiskCaseUseCase.execute(evaluationId));
+  }
+
+  @Test
+  @DisplayName("approveCase requires an authenticated admin")
+  void approveCaseRequiresAdmin() {
+    SecurityContextHolder.clearContext();
+    UUID evaluationId = UUID.randomUUID();
+
+    assertThrows(
+        InvalidOperationStateException.class, () -> approveRiskCaseUseCase.execute(evaluationId));
   }
 }

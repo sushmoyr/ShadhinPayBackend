@@ -28,7 +28,7 @@ public class UuidListConverter implements AttributeConverter<List<UUID>, String>
 
   @Override
   public List<UUID> convertToEntityAttribute(String dbData) {
-    if (dbData == null || dbData.trim().isEmpty()) {
+    if (dbData == null || dbData.isBlank()) {
       return new ArrayList<>();
     }
     try {

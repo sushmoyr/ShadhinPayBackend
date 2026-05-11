@@ -2,7 +2,6 @@ package com.shadhinpay.risk.engine;
 
 import com.shadhinpay.risk.entity.RiskRule;
 import com.shadhinpay.risk.usecase.TransactionContext;
-import com.shadhinpay.risk.usecase.internal.DisableRiskRuleUseCase;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +14,17 @@ import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.SimpleEvaluationContext;
 import org.springframework.stereotype.Component;
 
+/**
+ * Hardened SpEL evaluator. Uses {@link SimpleEvaluationContext} with read-only data binding so type
+ * references, bean references, constructors, and method invocation surface beyond the root object's
+ * bean properties are denied by default. Each evaluation runs on a bounded executor with a 50ms
+ * timeout.
+ *
+ * <p><b>Compile failure contract:</b> {@link #compile(RiskRule)} returns {@code null} on parse
+ * failure and logs ERROR. The caller (e.g. {@code CompiledRuleCache} or {@code
+ * CompiledRuleCacheListener}) is responsible for downstream action such as disabling the offending
+ * rule in the database.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -22,14 +32,12 @@ public class SafeSpelEvaluator {
 
   private final SpelExpressionParser parser = new SpelExpressionParser();
   private final ExecutorService spelExecutorService;
-  private final DisableRiskRuleUseCase disableRiskRuleUseCase;
 
   public Expression compile(RiskRule rule) {
     try {
       return parser.parseExpression(rule.getExpression());
     } catch (ParseException e) {
       log.error("Failed to parse SpEL expression for rule {}: {}", rule.getId(), e.getMessage());
-      disableRiskRuleUseCase.execute(rule.getId());
       return null;
     }
   }

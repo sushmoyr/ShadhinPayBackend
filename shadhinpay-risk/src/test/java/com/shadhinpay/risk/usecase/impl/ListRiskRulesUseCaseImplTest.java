@@ -13,13 +13,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-class DefaultListRiskRulesUseCaseTest {
+class ListRiskRulesUseCaseImplTest {
 
   @Test
   void shouldListRules() {
     RiskRuleRepository repo = mock(RiskRuleRepository.class);
     RiskRuleMapper mapper = new RiskRuleMapper();
-    DefaultListRiskRulesUseCase useCase = new DefaultListRiskRulesUseCase(repo, mapper);
+    ListRiskRulesUseCaseImpl useCase = new ListRiskRulesUseCaseImpl(repo, mapper);
 
     PageRequest pageable = PageRequest.of(0, 10);
     when(repo.findByActiveTrueAndDeletedFalse(pageable))

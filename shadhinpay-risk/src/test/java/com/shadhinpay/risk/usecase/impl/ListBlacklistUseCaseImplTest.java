@@ -13,13 +13,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
-class DefaultListBlacklistUseCaseTest {
+class ListBlacklistUseCaseImplTest {
 
   @Test
   void shouldListEntries() {
     BlacklistEntryRepository repo = mock(BlacklistEntryRepository.class);
     BlacklistEntryMapper mapper = new BlacklistEntryMapper();
-    DefaultListBlacklistUseCase useCase = new DefaultListBlacklistUseCase(repo, mapper);
+    ListBlacklistUseCaseImpl useCase = new ListBlacklistUseCaseImpl(repo, mapper);
 
     when(repo.findAllActive(any())).thenReturn(List.of(new BlacklistEntry()));
 

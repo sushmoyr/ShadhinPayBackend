@@ -1,5 +1,8 @@
 package com.shadhinpay.risk.usecase.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.risk.engine.BlacklistCache;
 import com.shadhinpay.risk.engine.CompiledRule;
@@ -17,8 +20,10 @@ import com.shadhinpay.risk.repository.RiskEvaluationRepository;
 import com.shadhinpay.risk.usecase.EvaluateTransactionUseCase;
 import com.shadhinpay.risk.usecase.RiskDecision;
 import com.shadhinpay.risk.usecase.TransactionContext;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  *   <li>Blacklist lookup (Redis O(1))
  *   <li>Velocity counters (Redis INCR)
  *   <li>SpEL rule evaluation (Caffeine-cached compiled expressions)
- *   <li>Decision: BLOCK (immediate) > FLAG (score ≥ threshold) > ALLOW
+ *   <li>Decision: BLOCK (immediate) &gt; FLAG (score ≥ threshold) &gt; ALLOW
  * </ol>
  *
  * <p><b>Fail-CLOSED:</b> any uncaught exception is mapped to {@code BLOCK} with reason {@code
@@ -51,6 +56,7 @@ public class EvaluateTransactionUseCaseImpl implements EvaluateTransactionUseCas
   private final SafeSpelEvaluator safeSpelEvaluator;
   private final RiskEvaluationRepository riskEvaluationRepository;
   private final MerchantRiskProfileRepository merchantRiskProfileRepository;
+  private final ObjectMapper objectMapper;
   private final int flagThreshold;
 
   public EvaluateTransactionUseCaseImpl(
@@ -60,6 +66,7 @@ public class EvaluateTransactionUseCaseImpl implements EvaluateTransactionUseCas
       SafeSpelEvaluator safeSpelEvaluator,
       RiskEvaluationRepository riskEvaluationRepository,
       MerchantRiskProfileRepository merchantRiskProfileRepository,
+      ObjectMapper objectMapper,
       int flagThreshold) {
     this.compiledRuleCache = compiledRuleCache;
     this.blacklistCache = blacklistCache;
@@ -67,6 +74,7 @@ public class EvaluateTransactionUseCaseImpl implements EvaluateTransactionUseCas
     this.safeSpelEvaluator = safeSpelEvaluator;
     this.riskEvaluationRepository = riskEvaluationRepository;
     this.merchantRiskProfileRepository = merchantRiskProfileRepository;
+    this.objectMapper = objectMapper;
     this.flagThreshold = flagThreshold;
   }
 
@@ -90,19 +98,15 @@ public class EvaluateTransactionUseCaseImpl implements EvaluateTransactionUseCas
   // ── Step 1: Blacklist ────────────────────────────────────────────────────
 
   private RiskDecision checkBlacklist(TransactionContext ctx) {
-    // PHONE
     if (blacklistCache.isBlacklisted(BlacklistType.PHONE, ctx.customerPhone())) {
       return blocked("Blacklist hit: PHONE");
     }
-    // EMAIL
     if (blacklistCache.isBlacklisted(BlacklistType.EMAIL, ctx.customerEmail())) {
       return blocked("Blacklist hit: EMAIL");
     }
-    // IP
     if (blacklistCache.isBlacklisted(BlacklistType.IP, ctx.ip())) {
       return blocked("Blacklist hit: IP");
     }
-    // MERCHANT
     if (blacklistCache.isBlacklisted(BlacklistType.MERCHANT, ctx.merchantId().toString())) {
       return blocked("Blacklist hit: MERCHANT");
     }
@@ -117,31 +121,26 @@ public class EvaluateTransactionUseCaseImpl implements EvaluateTransactionUseCas
 
     Map<String, Long> limits = resolveLimits(profile);
 
-    // PER_MERCHANT minute
     long count =
         velocityCounter.incrementAndGet(ctx.merchantId(), VelocityDimension.PER_MERCHANT, 60);
     if (count > limits.getOrDefault("per_merchant_minute", 5L)) {
       return blocked("Velocity: PER_MERCHANT/minute exceeded");
     }
-    // PER_MERCHANT hour
     count = velocityCounter.incrementAndGet(ctx.merchantId(), VelocityDimension.PER_MERCHANT, 3600);
     if (count > limits.getOrDefault("per_merchant_hour", 50L)) {
       return blocked("Velocity: PER_MERCHANT/hour exceeded");
     }
-    // PER_MERCHANT day
     count =
         velocityCounter.incrementAndGet(ctx.merchantId(), VelocityDimension.PER_MERCHANT, 86400);
     if (count > limits.getOrDefault("per_merchant_day", 200L)) {
       return blocked("Velocity: PER_MERCHANT/day exceeded");
     }
-    // PER_IP minute
-    UUID ipKey = UUID.nameUUIDFromBytes(ctx.ip().getBytes());
+    UUID ipKey = UUID.nameUUIDFromBytes(ctx.ip().getBytes(StandardCharsets.UTF_8));
     count = velocityCounter.incrementAndGet(ipKey, VelocityDimension.PER_IP, 60);
     if (count > limits.getOrDefault("per_ip_minute", 3L)) {
       return blocked("Velocity: PER_IP/minute exceeded");
     }
-    // PER_PHONE minute
-    UUID phoneKey = UUID.nameUUIDFromBytes(ctx.customerPhone().getBytes());
+    UUID phoneKey = UUID.nameUUIDFromBytes(ctx.customerPhone().getBytes(StandardCharsets.UTF_8));
     count = velocityCounter.incrementAndGet(phoneKey, VelocityDimension.PER_PHONE, 60);
     if (count > limits.getOrDefault("per_phone_minute", 3L)) {
       return blocked("Velocity: PER_PHONE/minute exceeded");
@@ -189,21 +188,18 @@ public class EvaluateTransactionUseCaseImpl implements EvaluateTransactionUseCas
   private RiskDecision doEvaluate(TransactionContext ctx) {
     Instant now = Instant.now();
 
-    // Step 1: Blacklist
     RiskDecision blacklistDecision = checkBlacklist(ctx);
     if (blacklistDecision != null) {
       persistEvaluation(ctx, blacklistDecision, now);
       return blacklistDecision;
     }
 
-    // Step 2: Velocity
     RiskDecision velocityDecision = checkVelocity(ctx);
     if (velocityDecision != null) {
       persistEvaluation(ctx, velocityDecision, now);
       return velocityDecision;
     }
 
-    // Step 3 + 4: Rule evaluation + Decision
     RiskDecision decision = evaluateRules(ctx);
     persistEvaluation(ctx, decision, now);
     return decision;
@@ -231,43 +227,70 @@ public class EvaluateTransactionUseCaseImpl implements EvaluateTransactionUseCas
   }
 
   private Map<String, Long> resolveLimits(MerchantRiskProfile profile) {
-    if (profile == null) {
-      return defaultLimits(TrustLevel.NEW);
+    Map<String, Long> base =
+        profile == null ? defaultLimits(TrustLevel.NEW) : defaultLimits(profile.getTrustLevel());
+
+    if (profile == null
+        || profile.getCustomLimits() == null
+        || profile.getCustomLimits().isBlank()) {
+      return base;
     }
-    return defaultLimits(profile.getTrustLevel());
+
+    try {
+      Map<String, Long> overrides =
+          objectMapper.readValue(
+              profile.getCustomLimits(), new TypeReference<Map<String, Long>>() {});
+      Map<String, Long> merged = new HashMap<>(base);
+      merged.putAll(overrides);
+      return merged;
+    } catch (JsonProcessingException e) {
+      log.warn(
+          "Invalid customLimits JSON for merchant {}; falling back to trust-level defaults: {}",
+          profile.getMerchantId(),
+          e.getMessage());
+      return base;
+    }
   }
 
-  @SuppressWarnings("PMD.UseConcurrentHashMap")
   private static Map<String, Long> defaultLimits(TrustLevel level) {
-    return switch (level) {
-      case NEW ->
-          Map.of(
-              "per_merchant_minute", 5L,
-              "per_merchant_hour", 50L,
-              "per_merchant_day", 200L,
-              "per_ip_minute", 3L,
-              "per_phone_minute", 3L);
-      case VERIFIED ->
-          Map.of(
-              "per_merchant_minute", 20L,
-              "per_merchant_hour", 200L,
-              "per_merchant_day", 1000L,
-              "per_ip_minute", 10L,
-              "per_phone_minute", 10L);
-      case TRUSTED ->
-          Map.of(
-              "per_merchant_minute", 100L,
-              "per_merchant_hour", 1000L,
-              "per_merchant_day", 5000L,
-              "per_ip_minute", 50L,
-              "per_phone_minute", 50L);
-      case VIP ->
-          Map.of(
-              "per_merchant_minute", 500L,
-              "per_merchant_hour", 5000L,
-              "per_merchant_day", 20000L,
-              "per_ip_minute", 200L,
-              "per_phone_minute", 200L);
-    };
+    Map<String, Long> limits = new HashMap<>();
+    switch (level) {
+      case NEW -> {
+        limits.put("per_merchant_minute", 5L);
+        limits.put("per_merchant_hour", 50L);
+        limits.put("per_merchant_day", 200L);
+        limits.put("per_ip_minute", 3L);
+        limits.put("per_phone_minute", 3L);
+      }
+      case VERIFIED -> {
+        limits.put("per_merchant_minute", 20L);
+        limits.put("per_merchant_hour", 200L);
+        limits.put("per_merchant_day", 1000L);
+        limits.put("per_ip_minute", 10L);
+        limits.put("per_phone_minute", 10L);
+      }
+      case TRUSTED -> {
+        limits.put("per_merchant_minute", 100L);
+        limits.put("per_merchant_hour", 1000L);
+        limits.put("per_merchant_day", 5000L);
+        limits.put("per_ip_minute", 50L);
+        limits.put("per_phone_minute", 50L);
+      }
+      case VIP -> {
+        limits.put("per_merchant_minute", 500L);
+        limits.put("per_merchant_hour", 5000L);
+        limits.put("per_merchant_day", 20000L);
+        limits.put("per_ip_minute", 200L);
+        limits.put("per_phone_minute", 200L);
+      }
+      default -> {
+        limits.put("per_merchant_minute", 5L);
+        limits.put("per_merchant_hour", 50L);
+        limits.put("per_merchant_day", 200L);
+        limits.put("per_ip_minute", 3L);
+        limits.put("per_phone_minute", 3L);
+      }
+    }
+    return limits;
   }
 }

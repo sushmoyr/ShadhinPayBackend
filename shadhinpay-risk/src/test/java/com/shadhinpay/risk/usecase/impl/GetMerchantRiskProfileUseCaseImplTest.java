@@ -12,14 +12,13 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
-class DefaultGetMerchantRiskProfileUseCaseTest {
+class GetMerchantRiskProfileUseCaseImplTest {
 
   @Test
   void shouldGetProfile() {
     MerchantRiskProfileRepository repo = mock(MerchantRiskProfileRepository.class);
     MerchantRiskProfileMapper mapper = new MerchantRiskProfileMapper();
-    DefaultGetMerchantRiskProfileUseCase useCase =
-        new DefaultGetMerchantRiskProfileUseCase(repo, mapper);
+    GetMerchantRiskProfileUseCaseImpl useCase = new GetMerchantRiskProfileUseCaseImpl(repo, mapper);
 
     UUID id = UUID.randomUUID();
     when(repo.findByMerchantId(id)).thenReturn(Optional.of(new MerchantRiskProfile()));
@@ -32,8 +31,7 @@ class DefaultGetMerchantRiskProfileUseCaseTest {
   void shouldThrowNotFound() {
     MerchantRiskProfileRepository repo = mock(MerchantRiskProfileRepository.class);
     MerchantRiskProfileMapper mapper = new MerchantRiskProfileMapper();
-    DefaultGetMerchantRiskProfileUseCase useCase =
-        new DefaultGetMerchantRiskProfileUseCase(repo, mapper);
+    GetMerchantRiskProfileUseCaseImpl useCase = new GetMerchantRiskProfileUseCaseImpl(repo, mapper);
 
     UUID id = UUID.randomUUID();
     when(repo.findByMerchantId(id)).thenReturn(Optional.empty());

@@ -1,12 +1,10 @@
 package com.shadhinpay.risk.engine;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 
 import com.shadhinpay.common.money.Money;
 import com.shadhinpay.risk.entity.RiskRule;
 import com.shadhinpay.risk.usecase.TransactionContext;
-import com.shadhinpay.risk.usecase.internal.DisableRiskRuleUseCase;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
@@ -20,15 +18,13 @@ import org.springframework.expression.Expression;
 class SafeSpelEvaluatorTest {
 
   private SafeSpelEvaluator evaluator;
-  private DisableRiskRuleUseCase disableRiskRuleUseCase;
   private ExecutorService executorService;
   private TransactionContext context;
 
   @BeforeEach
   void setUp() {
-    disableRiskRuleUseCase = mock(DisableRiskRuleUseCase.class);
     executorService = Executors.newFixedThreadPool(2);
-    evaluator = new SafeSpelEvaluator(executorService, disableRiskRuleUseCase);
+    evaluator = new SafeSpelEvaluator(executorService);
     context =
         new TransactionContext(
             UUID.randomUUID(),

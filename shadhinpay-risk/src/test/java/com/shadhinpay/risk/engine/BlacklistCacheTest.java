@@ -28,7 +28,7 @@ class BlacklistCacheTest {
 
   @BeforeEach
   void setUp() {
-    when(redisTemplate.opsForSet()).thenReturn(setOperations);
+    lenient().when(redisTemplate.opsForSet()).thenReturn(setOperations);
     cache = new BlacklistCache(repository, redisTemplate);
   }
 
