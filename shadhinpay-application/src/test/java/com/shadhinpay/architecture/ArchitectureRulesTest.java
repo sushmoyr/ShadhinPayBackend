@@ -25,6 +25,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @AnalyzeClasses(
@@ -52,6 +53,28 @@ class ArchitectureRulesTest {
           .areAnnotatedWith(RestController.class)
           .should()
           .resideInAPackage("..controller..");
+
+  // §8 Controller Port + Adapter — every @RestController must implement a *Controller
+  // interface AND have a class name ending in "Impl"
+  @ArchTest
+  static final ArchRule controllers_must_be_port_and_adapter_split =
+      classes()
+          .that()
+          .areAnnotatedWith(RestController.class)
+          .should(haveSimpleNameEndingWith("Impl"))
+          .andShould(implementAnInterfaceEndingWith("Controller"));
+
+  // §8 Controller Port + Adapter — the port interface holds the @RequestMapping
+  @ArchTest
+  static final ArchRule controller_interfaces_must_carry_request_mapping =
+      classes()
+          .that()
+          .areInterfaces()
+          .and()
+          .haveSimpleNameEndingWith("Controller")
+          .and()
+          .resideOutsideOfPackage("com.shadhinpay.common..")
+          .should(beMetaAnnotatedWith(RequestMapping.class));
 
   // §21 Forbidden: Controller → Repository (skip the use case layer)
   @ArchTest
@@ -208,6 +231,62 @@ class ArchitectureRulesTest {
       public boolean test(JavaClass cls) {
         return cls.getAllRawInterfaces().stream()
             .anyMatch(i -> i.getSimpleName().endsWith("UseCase"));
+      }
+    };
+  }
+
+  private static ArchCondition<JavaClass> haveSimpleNameEndingWith(String suffix) {
+    return new ArchCondition<JavaClass>("have simple name ending with '" + suffix + "'") {
+      @Override
+      public void check(JavaClass item, ConditionEvents events) {
+        if (!item.getSimpleName().endsWith(suffix)) {
+          events.add(
+              SimpleConditionEvent.violated(
+                  item,
+                  String.format(
+                      "Class %s is annotated @RestController but its simple name does not end with"
+                          + " '%s'. Split controllers into a {Name}Controller interface (port) and"
+                          + " {Name}ControllerImpl class (adapter).",
+                      item.getName(), suffix)));
+        }
+      }
+    };
+  }
+
+  private static ArchCondition<JavaClass> implementAnInterfaceEndingWith(String suffix) {
+    return new ArchCondition<JavaClass>(
+        "implement an interface whose name ends with '" + suffix + "'") {
+      @Override
+      public void check(JavaClass item, ConditionEvents events) {
+        boolean implementsPort =
+            item.getAllRawInterfaces().stream().anyMatch(i -> i.getSimpleName().endsWith(suffix));
+        if (!implementsPort) {
+          events.add(
+              SimpleConditionEvent.violated(
+                  item,
+                  String.format(
+                      "Class %s is annotated @RestController but implements no '*%s' port"
+                          + " interface. Split into a port + adapter.",
+                      item.getName(), suffix)));
+        }
+      }
+    };
+  }
+
+  private static ArchCondition<JavaClass> beMetaAnnotatedWith(
+      Class<? extends java.lang.annotation.Annotation> annotation) {
+    return new ArchCondition<JavaClass>("be (meta-)annotated with @" + annotation.getSimpleName()) {
+      @Override
+      public void check(JavaClass item, ConditionEvents events) {
+        if (!item.isMetaAnnotatedWith(annotation) && !item.isAnnotatedWith(annotation)) {
+          events.add(
+              SimpleConditionEvent.violated(
+                  item,
+                  String.format(
+                      "Interface %s ends with 'Controller' but carries no @%s — the port must"
+                          + " declare the route prefix.",
+                      item.getName(), annotation.getSimpleName())));
+        }
       }
     };
   }

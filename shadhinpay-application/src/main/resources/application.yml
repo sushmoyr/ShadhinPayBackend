@@ -39,6 +39,10 @@ springdoc:
 shadhinpay:
   auth:
     token-secret: ${JWT_SECRET:dev-only-secret-do-not-use-in-prod-32bytes!}
+  quota:
+    free-per-month: 10
+    pending-ttl-seconds: 1800
+    final-ttl-seconds: 3024000
 
 ---
 spring:
