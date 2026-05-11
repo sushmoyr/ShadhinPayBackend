@@ -1,4 +1,4 @@
-# Gitleaks configuration for ShadhinPay.
+# Gitleaks configuration for ConfluxPay.
 #
 # Extends gitleaks' default ruleset (kept up to date with the bundled binary).
 # Allowlists below are reserved for verified-safe matches that the default
@@ -20,7 +20,7 @@ id = "generic-api-key"
 
   [[rules.allowlists]]
   description = """
-  Test fixture in shadhinpay-adapters/.../VendorCredentialsTest.java that asserts
+  Test fixture in conflux-adapters/.../VendorCredentialsTest.java that asserts
   VendorCredentials.toString() redacts every value. The literal token landed in
   the initial commit (3df40bb) before the redaction-fixture rewrite that replaced
   it with a low-entropy placeholder; this fingerprint allowlists only that exact
@@ -29,5 +29,5 @@ id = "generic-api-key"
   """
   commits = ["3df40bb8265c0dab3cf574a06a1f1874de2c6b9b"]
   paths = [
-    '''shadhinpay-adapters/src/test/java/com/shadhinpay/adapters/port/VendorCredentialsTest\.java''',
+    '''conflux-adapters/src/test/java/pay/conflux/backend/adapters/port/VendorCredentialsTest\.java''',
   ]

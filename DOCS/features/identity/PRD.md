@@ -1,7 +1,7 @@
 # PRD - Identity & Merchant Onboarding
 
 ## 1. Purpose
-To provide a secure and moderated entry point for Merchants to join the ShadhinPay platform. This system manages the lifecycle of a Merchant from initial signup to full business activation, including regulatory compliance (KYC/KYB) and administrative oversight.
+To provide a secure and moderated entry point for Merchants to join the ConfluxPay platform. This system manages the lifecycle of a Merchant from initial signup to full business activation, including regulatory compliance (KYC/KYB) and administrative oversight.
 
 ## 2. Target Audience
 *   **Merchants:** Business owners seeking to integrate payment gateways.
@@ -37,7 +37,7 @@ The system must enforce the following states for a Merchant Account:
     *   **NID:** Front and Back images (or PDF).
     *   **Trade License:** Clear image/PDF.
     *   **TIN Certificate:** (Optional/Tiered).
-*   **Storage:** Documents must be stored securely (using the `shadhinpay-secrets` or `library-storage` logic).
+*   **Storage:** Documents must be stored securely (using the `conflux-secrets` or `library-storage` logic).
 
 ### 4.3 Role-Based Access Control (RBAC)
 *   **ROLE_MERCHANT:** Access to own dashboard, business settings, and reports.

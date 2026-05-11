@@ -1,0 +1,16 @@
+package pay.conflux.backend.common.time;
+
+import java.time.Clock;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class ClockConfig {
+
+  @Bean
+  @ConditionalOnMissingBean(Clock.class)
+  public Clock systemClock() {
+    return Clock.systemUTC();
+  }
+}

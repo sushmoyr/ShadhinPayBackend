@@ -1,7 +1,7 @@
-# Tech Spec - Invoice Management (shadhinpay-invoice)
+# Tech Spec - Invoice Management (conflux-invoice)
 
 ## 1. Architecture
-Follows Hexagonal Architecture. This module is a consumer of the `shadhinpay-payment-core` and a provider of public-facing web content.
+Follows Hexagonal Architecture. This module is a consumer of the `conflux-payment-core` and a provider of public-facing web content.
 
 ## 2. Domain Model & Schema
 
@@ -71,7 +71,7 @@ When a customer clicks "Pay" on the public invoice page:
 ## 5. Implementation Details
 
 ### 5.1 QR Code Generation
-*   Use a library like `zxing` or an external service to generate a QR code pointing to `https://request.shadhinpay.com/invoices/v1/{slug}`.
+*   Use a library like `zxing` or an external service to generate a QR code pointing to `https://request.conflux.com/invoices/v1/{slug}`.
 
 ### 5.2 Public Page Security
 *   The public endpoint must be rate-limited by IP to prevent scrapers.

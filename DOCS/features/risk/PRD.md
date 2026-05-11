@@ -1,7 +1,7 @@
-# PRD - Risk & Fraud Engine (shadhinpay-risk)
+# PRD - Risk & Fraud Engine (conflux-risk)
 
 ## 1. Purpose
-The Risk & Fraud Engine is the "Guardian" of ShadhinPay. It protects the platform, its merchants, and MFS partners by identifying, flagging, and mitigating suspicious activities. It provides a real-time pre-flight scoring system for transactions and a comprehensive rule management dashboard for platform managers.
+The Risk & Fraud Engine is the "Guardian" of ConfluxPay. It protects the platform, its merchants, and MFS partners by identifying, flagging, and mitigating suspicious activities. It provides a real-time pre-flight scoring system for transactions and a comprehensive rule management dashboard for platform managers.
 
 ## 2. Target Audience
 *   **Platform Managers (Admins):** To manage risk rules, monitor suspicious activities, and perform manual reviews.

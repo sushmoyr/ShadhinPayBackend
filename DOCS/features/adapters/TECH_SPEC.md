@@ -1,4 +1,4 @@
-# Tech Spec - MFS Adapter Library (shadhinpay-adapters)
+# Tech Spec - MFS Adapter Library (conflux-adapters)
 
 ## 1. Architecture
 This module defines the **Outbound Port** (`PaymentProvider`) and its multiple **Adapter** implementations. It is a set of "Strategy" implementations.
@@ -33,7 +33,7 @@ Each implementation (e.g., `BkashAdapter`, `StripeAdapter`) must instantiate its
 *   **Read/Write Timeout:** 10s.
 
 ### 3.2 Centralized Token Service
-A shared component in the `shadhinpay-adapters` module:
+A shared component in the `conflux-adapters` module:
 *   `TokenService.getToken(vendor, credentials)`: Checks Redis for a valid token. If missing or expired, calls the vendor's Auth API and caches the result.
 
 ### 3.3 Error Mapping Logic

@@ -1,7 +1,7 @@
-# Tech Spec - Settlement & Reconciliation (shadhinpay-settlement)
+# Tech Spec - Settlement & Reconciliation (conflux-settlement)
 
 ## 1. Architecture
-Follows Hexagonal Architecture. This module is the primary writer for `SETTLEMENT` and `PAYOUT` journal entries in the `shadhinpay-ledger`.
+Follows Hexagonal Architecture. This module is the primary writer for `SETTLEMENT` and `PAYOUT` journal entries in the `conflux-ledger`.
 
 ## 2. Domain Model & Schema
 
@@ -60,7 +60,7 @@ For each reconciled transaction:
 1.  `PlatformFee` = `Amount * FeePercentage` (e.g., 2.5% or fixed).
 2.  `VAT` = `PlatformFee * 15%`.
 3.  `NetToMerchant` = `Amount - PlatformFee - VAT`.
-4.  **Journal Entry:** Trigger `shadhinpay-ledger` to move funds from `ESCROW` to `MERCHANT_PAYABLE`.
+4.  **Journal Entry:** Trigger `conflux-ledger` to move funds from `ESCROW` to `MERCHANT_PAYABLE`.
 
 ## 5. Implementation Details
 

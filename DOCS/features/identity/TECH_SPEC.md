@@ -1,4 +1,4 @@
-# Tech Spec - Identity & Merchant Onboarding (shadhinpay-identity)
+# Tech Spec - Identity & Merchant Onboarding (conflux-identity)
 
 ## 1. Architecture
 Follows the UseCase-driven Hexagonal Architecture. This module is the centralized authority for Authentication and Identity Management.
@@ -10,7 +10,7 @@ Follows the UseCase-driven Hexagonal Architecture. This module is the centralize
 #### `User` (The Identity)
 The core authentication entity.
 *   `id`: UUID
-*   `identifier`: String (Unique, Indexed) - e.g., "01712345678" or "admin@shadhinpay.com"
+*   `identifier`: String (Unique, Indexed) - e.g., "01712345678" or "admin@conflux.com"
 *   `identifierType`: Enum (`PHONE`, `EMAIL`, `USERNAME`)
 *   `passwordHash`: String
 *   `userType`: Enum (`MERCHANT`, `ADMIN`)

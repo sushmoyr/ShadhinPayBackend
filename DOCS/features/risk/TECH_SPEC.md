@@ -1,4 +1,4 @@
-# Tech Spec - Risk & Fraud Engine (shadhinpay-risk)
+# Tech Spec - Risk & Fraud Engine (conflux-risk)
 
 ## 1. Architecture
 Follows Hexagonal Architecture. This module provides a synchronous **Decision Service** to the `payment-core` and an asynchronous **Case Management** workflow for Admins.

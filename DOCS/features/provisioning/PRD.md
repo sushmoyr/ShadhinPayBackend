@@ -35,7 +35,7 @@ To enable verified Merchants to manage their business entities, configure paymen
 
 ### 4.2 Vendor Configuration (Dual Mode)
 For each supported MFS provider (bKash, Nagad, Rocket, etc.), a business can be in one of two modes:
-1.  **PARTNER MODE (Default):** Uses ShadhinPay's aggregate credentials. No merchant-provided setup required.
+1.  **PARTNER MODE (Default):** Uses ConfluxPay's aggregate credentials. No merchant-provided setup required.
 2.  **CUSTOM MODE:** Merchant provides their own credentials (App Key, Secret, Merchant ID).
 
 ### 4.3 API Key Lifecycle

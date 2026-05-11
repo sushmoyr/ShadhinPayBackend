@@ -1,6 +1,6 @@
-# ShadhinPay — Autonomous AI-Agent Development Workflow
+# ConfluxPay — Autonomous AI-Agent Development Workflow
 
-> **Purpose:** A repeatable workflow for building the ShadhinPay backend (and coordinating the frontend) using autonomous AI coding agents (Claude Code, Cursor agents, etc.). It treats each module's PRD + TECH_SPEC as the agent's contract and uses Spring Modulith's built-in verification as the safety net that keeps autonomous work honest.
+> **Purpose:** A repeatable workflow for building the ConfluxPay backend (and coordinating the frontend) using autonomous AI coding agents (Claude Code, Cursor agents, etc.). It treats each module's PRD + TECH_SPEC as the agent's contract and uses Spring Modulith's built-in verification as the safety net that keeps autonomous work honest.
 >
 > **Scope:** Backend only in detail. Frontend coordination is described in §9 but the frontend build itself is out of scope for this document.
 >
@@ -10,7 +10,7 @@
 
 ## Table of Contents
 
-1. [Why this workflow fits ShadhinPay](#1-why-this-workflow-fits-shadhinpay)
+1. [Why this workflow fits ConfluxPay](#1-why-this-workflow-fits-conflux)
 2. [Core principles](#2-core-principles)
 3. [Phase 0 — Foundation (sequential, single agent)](#3-phase-0--foundation-sequential-single-agent)
 4. [Phase 1 — Parallel module waves](#4-phase-1--parallel-module-waves)
@@ -25,7 +25,7 @@
 
 ---
 
-## 1. Why this workflow fits ShadhinPay
+## 1. Why this workflow fits ConfluxPay
 
 The codebase is *already* shaped for parallel agent work:
 
@@ -70,7 +70,7 @@ Per `DOCS/features/common/TECH_SPEC.md`:
 - `BaseException` + global `ExceptionTranslator` (`@ControllerAdvice`).
 - `Routes` constants class.
 - HMAC-SHA256 signing/verification utility for webhooks.
-- MDC trace filter (`X-ShadhinPay-Trace-ID`) + propagation helpers.
+- MDC trace filter (`X-PGW-Trace-ID`) + propagation helpers.
 - Hibernate tenant filter (`@FilterDef(name = "tenantFilter", ...)`) + `TenantInterceptor` enabling it from `SecurityContext`.
 - `SecurityUtils` (`currentMerchantId()`, `currentBusinessId()`, `currentAdminId()`).
 - AES-256-GCM encryption util for credential fields.

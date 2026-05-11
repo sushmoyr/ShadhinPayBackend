@@ -1,11 +1,11 @@
-# PRD - Payment Core (shadhinpay-payment-core)
+# PRD - Payment Core (conflux-payment-core)
 
 ## 1. Purpose
-The Payment Core is the central processing engine of ShadhinPay. it orchestrates the lifecycle of a payment transaction from initial request to final settlement, abstracting the complexity of multiple MFS/Card vendors into a single, unified API.
+The Payment Core is the central processing engine of ConfluxPay. it orchestrates the lifecycle of a payment transaction from initial request to final settlement, abstracting the complexity of multiple MFS/Card vendors into a single, unified API.
 
 ## 2. Target Audience
 *   **Merchants:** Who integrate the API to accept payments.
-*   **Customers:** Who pay via the ShadhinPay checkout UI or API.
+*   **Customers:** Who pay via the ConfluxPay checkout UI or API.
 *   **System Modules:** `ledger`, `risk`, `quota`, and `notifications` depend on the state changes in this module.
 
 ## 3. User Stories
@@ -38,8 +38,8 @@ The module must provide a single set of endpoints that handle all vendors:
 For every transaction, the engine must:
 1.  Identify the `Business` and its `VendorConfig`.
 2.  **Logic:** 
-    *   If `mode == CUSTOM`: Use the merchant's encrypted credentials (from `shadhinpay-provisioning`).
-    *   If `mode == PARTNER`: Use ShadhinPay's global credentials.
+    *   If `mode == CUSTOM`: Use the merchant's encrypted credentials (from `conflux-provisioning`).
+    *   If `mode == PARTNER`: Use ConfluxPay's global credentials.
 
 ### 4.4 Idempotency System
 *   Every `POST` request must accept an `X-Idempotency-Key`.
@@ -48,8 +48,8 @@ For every transaction, the engine must:
 ### 4.5 Risk & Pre-flight Checks
 Before calling a vendor adapter, the engine must:
 1.  Verify the Merchant is `ACTIVE`.
-2.  Call `shadhinpay-risk` for fraud scoring/blocking.
-3.  Call `shadhinpay-quota` to check/increment the free-tier counter (for Partner Mode).
+2.  Call `conflux-risk` for fraud scoring/blocking.
+3.  Call `conflux-quota` to check/increment the free-tier counter (for Partner Mode).
 
 ## 5. Non-Functional Requirements
 *   **Consistency:** Use **Spring Modulith Events** to notify the `ledger` module. A transaction is not "Complete" until the ledger event is persisted.

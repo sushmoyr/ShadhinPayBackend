@@ -9,25 +9,25 @@
     <relativePath/>
   </parent>
 
-  <groupId>com.shadhinpay</groupId>
-  <artifactId>shadhinpay-parent</artifactId>
+  <groupId>pay.conflux.backend</groupId>
+  <artifactId>ConfluxPay</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>ShadhinPay Parent</name>
-  <description>ShadhinPay backend monorepo (Maven multi-module)</description>
+  <name>ConfluxPay Parent</name>
+  <description>ConfluxPay backend monorepo (Maven multi-module)</description>
 
   <modules>
-    <module>shadhinpay-common</module>
-    <module>shadhinpay-identity</module>
-    <module>shadhinpay-provisioning</module>
-    <module>shadhinpay-payment-core</module>
-    <module>shadhinpay-adapters</module>
-    <module>shadhinpay-ledger</module>
-    <module>shadhinpay-quota</module>
-    <module>shadhinpay-risk</module>
-    <module>shadhinpay-invoice</module>
-    <module>shadhinpay-settlement</module>
-    <module>shadhinpay-application</module>
+    <module>conflux-common</module>
+    <module>conflux-identity</module>
+    <module>conflux-provisioning</module>
+    <module>conflux-payment-core</module>
+    <module>conflux-adapters</module>
+    <module>conflux-ledger</module>
+    <module>conflux-quota</module>
+    <module>conflux-risk</module>
+    <module>conflux-invoice</module>
+    <module>conflux-settlement</module>
+    <module>conflux-application</module>
   </modules>
 
   <properties>
@@ -37,7 +37,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- Internal version -->
-    <shadhinpay.version>0.0.1-SNAPSHOT</shadhinpay.version>
+    <conflux.version>0.0.1-SNAPSHOT</conflux.version>
 
     <!-- Dependency versions -->
     <spring-modulith.version>1.3.1</spring-modulith.version>
@@ -71,54 +71,54 @@
     <dependencies>
       <!-- Internal modules -->
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-common</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-common</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-identity</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-identity</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-provisioning</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-provisioning</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-payment-core</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-payment-core</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-adapters</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-adapters</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-ledger</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-ledger</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-quota</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-quota</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-risk</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-risk</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-invoice</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-invoice</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
       <dependency>
-        <groupId>com.shadhinpay</groupId>
-        <artifactId>shadhinpay-settlement</artifactId>
-        <version>${shadhinpay.version}</version>
+        <groupId>pay.conflux.backend</groupId>
+        <artifactId>conflux-settlement</artifactId>
+        <version>${conflux.version}</version>
       </dependency>
 
       <!-- Spring Modulith BOM -->
@@ -343,7 +343,7 @@
           </configuration>
         </plugin>
 
-        <!-- springdoc-openapi runtime dump (used in shadhinpay-application). -->
+        <!-- springdoc-openapi runtime dump (used in conflux-application). -->
         <plugin>
           <groupId>org.springdoc</groupId>
           <artifactId>springdoc-openapi-maven-plugin</artifactId>

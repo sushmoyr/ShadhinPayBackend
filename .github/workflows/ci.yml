@@ -25,13 +25,13 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: shadhinpay
-          POSTGRES_PASSWORD: shadhinpay
-          POSTGRES_DB: shadhinpay
+          POSTGRES_USER: conflux
+          POSTGRES_PASSWORD: conflux
+          POSTGRES_DB: conflux
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U shadhinpay"
+          --health-cmd "pg_isready -U conflux"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
@@ -73,16 +73,16 @@ jobs:
         env:
           DB_HOST: localhost
           DB_PORT: 5432
-          DB_NAME: shadhinpay
-          DB_USER: shadhinpay
-          DB_PASSWORD: shadhinpay
+          DB_NAME: conflux
+          DB_USER: conflux
+          DB_PASSWORD: conflux
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-do-not-use-in-prod-32bytes!' }}
         run: mvn $MAVEN_CLI_OPTS -Pcoverage verify
 
       - name: Emit OpenAPI JSON
-        run: mvn $MAVEN_CLI_OPTS -pl shadhinpay-application -am -Popenapi -DskipTests=true verify
+        run: mvn $MAVEN_CLI_OPTS -pl conflux-application -am -Popenapi -DskipTests=true verify
 
       - name: Static analysis — SpotBugs + PMD
         run: mvn $MAVEN_CLI_OPTS -Pstatic-analysis -DskipTests=true verify
@@ -98,7 +98,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: spring-modulith-docs
-          path: shadhinpay-application/target/spring-modulith-docs/
+          path: conflux-application/target/spring-modulith-docs/
           if-no-files-found: warn
 
       - name: Upload OpenAPI artifact
@@ -106,7 +106,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: openapi
-          path: shadhinpay-application/target/openapi/openapi.json
+          path: conflux-application/target/openapi/openapi.json
           if-no-files-found: warn
 
       - name: Upload JaCoCo reports

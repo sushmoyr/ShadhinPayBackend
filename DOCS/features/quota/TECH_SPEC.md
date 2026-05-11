@@ -1,4 +1,4 @@
-# Tech Spec - Quota & Metering (shadhinpay-quota)
+# Tech Spec - Quota & Metering (conflux-quota)
 
 ## 1. Architecture
 Follows Hexagonal Architecture. This module acts as a high-performance utility for the `payment-core`.
@@ -62,7 +62,7 @@ On the 1st of every month:
 The `CheckAndIncrementQuotaUseCase` must be wrapped in a `try-catch`. Any Redis connection error or timeout must default to returning `FREE`. A separate error log should be generated for manual reconciliation if needed.
 
 ### 5.2 Integration with Payment Core
-`payment-core` calls `shadhinpay-quota` **synchronously** during the initiation phase.
+`payment-core` calls `conflux-quota` **synchronously** during the initiation phase.
 *   If `mode == CUSTOM` -> Skip Quota check.
 *   If `mode == PARTNER` -> Call `checkAndIncrement`.
 

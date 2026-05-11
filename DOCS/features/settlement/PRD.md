@@ -1,7 +1,7 @@
-# PRD - Settlement & Reconciliation (shadhinpay-settlement)
+# PRD - Settlement & Reconciliation (conflux-settlement)
 
 ## 1. Purpose
-The Settlement & Reconciliation module is the final phase of the payment lifecycle. It ensures that funds collected from MFS vendors (bKash, Nagad, etc.) match ShadhinPay's internal ledger and are accurately distributed to merchants after deducting applicable fees and taxes.
+The Settlement & Reconciliation module is the final phase of the payment lifecycle. It ensures that funds collected from MFS vendors (bKash, Nagad, etc.) match ConfluxPay's internal ledger and are accurately distributed to merchants after deducting applicable fees and taxes.
 
 ## 2. Target Audience
 *   **Merchants:** To receive payouts and view settlement statements.
@@ -41,7 +41,7 @@ The Settlement & Reconciliation module is the final phase of the payment lifecyc
 
 ## 5. Non-Functional Requirements
 *   **Accuracy:** Zero-tolerance for rounding errors. Use `BigDecimal(19, 4)`.
-*   **Auditability:** Every settlement action must be linked to a `JournalEntry` in the `shadhinpay-ledger`.
+*   **Auditability:** Every settlement action must be linked to a `JournalEntry` in the `conflux-ledger`.
 *   **Security:** Payout files must be accessible only to authorized Finance Admins and require 2FA for generation.
 
 ## 6. Acceptance Criteria

@@ -1,4 +1,4 @@
-# ShadhinPay — Phase 0 Agent Prompts
+# ConfluxPay — Phase 0 Agent Prompts
 
 > **How to use this file:** Each section below is a self-contained prompt you can copy-paste into a fresh Claude Code session. They are ordered; do not run them out of order. After each prompt completes, verify the listed acceptance criteria locally before launching the next one.
 >
@@ -29,7 +29,7 @@
 ## Prompt 1 — Maven multi-module scaffold
 
 ```
-You are bootstrapping the ShadhinPay backend monorepo. This is the very first task; nothing exists yet beyond the docs.
+You are bootstrapping the ConfluxPay backend monorepo. This is the very first task; nothing exists yet beyond the docs.
 
 READ FIRST (in order):
 - ARCHITECTURE.md (full file)
@@ -42,19 +42,19 @@ Create a Maven multi-module project. No business logic yet; just the skeleton.
 
 DELIVERABLES
 1. Root `pom.xml` with `<packaging>pom</packaging>`, Java 21, Spring Boot 3.x parent, and these modules declared:
-   - shadhinpay-common
-   - shadhinpay-identity
-   - shadhinpay-provisioning
-   - shadhinpay-payment-core
-   - shadhinpay-adapters
-   - shadhinpay-ledger
-   - shadhinpay-quota
-   - shadhinpay-risk
-   - shadhinpay-invoice
-   - shadhinpay-settlement
-   - shadhinpay-application      (the Spring Boot bootstrap module that depends on every feature module)
+   - conflux-common
+   - conflux-identity
+   - conflux-provisioning
+   - conflux-payment-core
+   - conflux-adapters
+   - conflux-ledger
+   - conflux-quota
+   - conflux-risk
+   - conflux-invoice
+   - conflux-settlement
+   - conflux-application      (the Spring Boot bootstrap module that depends on every feature module)
 
-2. Each module has its own `pom.xml`. Feature modules depend on `shadhinpay-common`. The `shadhinpay-application` module depends on every feature module.
+2. Each module has its own `pom.xml`. Feature modules depend on `conflux-common`. The `conflux-application` module depends on every feature module.
 
 3. Standard dependencies pinned in the root `<dependencyManagement>`:
    - spring-boot-starter-web, spring-boot-starter-data-jpa, spring-boot-starter-security, spring-boot-starter-validation, spring-boot-starter-actuator
@@ -67,20 +67,20 @@ DELIVERABLES
    - testcontainers (postgres, junit-jupiter), wiremock-jetty12, jqwik, archunit-junit5, rest-assured
    - springdoc-openapi-starter-webmvc-ui
 
-4. `shadhinpay-application/src/main/java/com/shadhinpay/ShadhinPayApplication.java` — `@SpringBootApplication` bootstrap class with `@EnableJpaAuditing`.
+4. `conflux-application/src/main/java/pay/conflux/backend/ConfluxPayApplication.java` — `@SpringBootApplication` bootstrap class with `@EnableJpaAuditing`.
 
-5. `shadhinpay-application/src/main/resources/application.yml` with profiles for `dev`, `staging`, `prod`. Use `${SPRING_PROFILE:dev}`. Include placeholder Postgres + Redis config (env-var driven, no hardcoded creds).
+5. `conflux-application/src/main/resources/application.yml` with profiles for `dev`, `staging`, `prod`. Use `${SPRING_PROFILE:dev}`. Include placeholder Postgres + Redis config (env-var driven, no hardcoded creds).
 
 6. `.gitignore` (Maven, IntelliJ, VS Code, .env), `.editorconfig`, and a top-level `README.md` that just points to `ARCHITECTURE.md`, `DEVELOPMENT_WORKFLOW.md`, and `PHASE_0_PROMPTS.md`.
 
 7. Spotless Maven plugin configured at the root with Google Java Format.
 
 PACKAGE STRUCTURE
-Use `com.shadhinpay.{module}` as the base package per module (e.g., `com.shadhinpay.common`, `com.shadhinpay.identity`).
+Use `pay.conflux.backend.{module}` as the base package per module (e.g., `pay.conflux.backend.common`, `pay.conflux.backend.identity`).
 
 ACCEPTANCE CRITERIA (you MUST verify before claiming done)
 - `mvn -q clean verify` succeeds with zero source files (only the bootstrap class).
-- `mvn spring-boot:run -pl shadhinpay-application` starts the application without errors (it will exit if no other config; that's fine — the test is that wiring resolves).
+- `mvn spring-boot:run -pl conflux-application` starts the application without errors (it will exit if no other config; that's fine — the test is that wiring resolves).
 - Spotless `mvn spotless:check` passes.
 - Every module pom resolves with no version warnings.
 
@@ -98,16 +98,16 @@ When done, output: a tree of created files, the final `mvn verify` log tail, and
 ## Prompt 2 — `common`: API envelope, errors, auditing, routes
 
 ```
-The ShadhinPay Maven scaffold exists. You are now filling in the `shadhinpay-common` module's foundational types.
+The ConfluxPay Maven scaffold exists. You are now filling in the `conflux-common` module's foundational types.
 
 READ FIRST
 - ARCHITECTURE.md §10 (API Response Envelope), §11 (Exception Hierarchy), §13 (Route Constants), §7 (Entities), §18 (Auditing)
 - DOCS/features/common/TECH_SPEC.md (full file)
 
 WORK ONLY IN
-- shadhinpay-common/
+- conflux-common/
 
-DELIVERABLES (place in `com.shadhinpay.common.*` sub-packages)
+DELIVERABLES (place in `pay.conflux.backend.common.*` sub-packages)
 
 1. `dto/ApiResult.java` — generic envelope record with fields `data`, `meta`, `pagination`. Static factories per ARCHITECTURE.md §10:
    - `ok(T data)`, `ok(Page<T> page)`, `created(T data)`, `ok()` (Void), `error(HttpStatus, String, ErrorCode)`, `validationError(Map<String,String>)`.
@@ -130,8 +130,8 @@ TESTS (≥ 80% coverage on this module)
 - Unit test that `Auditable.createdAt` and `updatedAt` are populated by Hibernate when persisting a trivial JPA entity (use H2 in-test or Testcontainers Postgres).
 
 ACCEPTANCE CRITERIA
-- `mvn -pl shadhinpay-common -am verify` is green.
-- JaCoCo line coverage ≥ 80% for `shadhinpay-common`.
+- `mvn -pl conflux-common -am verify` is green.
+- JaCoCo line coverage ≥ 80% for `conflux-common`.
 - No usage of `@Data` on any entity (will be enforced later by ArchUnit; do not introduce now).
 - All response factories return JSON matching the shape in ARCHITECTURE.md §10.
 
@@ -148,7 +148,7 @@ Output: tree of created files, JaCoCo report tail, sample JSON of `ApiResult.ok(
 ## Prompt 3 — `common`: money & validation primitives
 
 ```
-You are extending `shadhinpay-common` with the money handling and shared validation primitives that every feature module relies on.
+You are extending `conflux-common` with the money handling and shared validation primitives that every feature module relies on.
 
 READ FIRST
 - DOCS/features/common/TECH_SPEC.md §3.2 (Monetary Representation)
@@ -156,9 +156,9 @@ READ FIRST
 - ARCHITECTURE.md §12 (Validation)
 
 WORK ONLY IN
-- shadhinpay-common/
+- conflux-common/
 
-DELIVERABLES (in `com.shadhinpay.common.*`)
+DELIVERABLES (in `pay.conflux.backend.common.*`)
 
 1. `money/Money.java` — value object record wrapping `BigDecimal amount` and `String currency`. Enforce scale 4 with `RoundingMode.HALF_EVEN` in the canonical constructor. Provide `add`, `subtract`, `multiply(BigDecimal)`, `negate`, `isPositive`, `isZero`, `isNegative`. Throw `IllegalArgumentException` on currency mismatch.
 2. `money/MoneyConverter.java` — JPA `AttributeConverter<Money, BigDecimal>` so entities can persist `Money` directly when desired.
@@ -175,7 +175,7 @@ TESTS
 - Unit tests on every custom validator (valid + invalid + null cases).
 
 ACCEPTANCE CRITERIA
-- `mvn -pl shadhinpay-common -am verify` green.
+- `mvn -pl conflux-common -am verify` green.
 - Coverage ≥ 80%.
 - jqwik test runs ≥ 100 random examples per property.
 
@@ -192,7 +192,7 @@ Output: file tree, jqwik run summary, JaCoCo tail.
 ## Prompt 4 — `common`: security, encryption, HMAC, multi-tenancy
 
 ```
-You are extending `shadhinpay-common` with security primitives shared by every feature module.
+You are extending `conflux-common` with security primitives shared by every feature module.
 
 READ FIRST
 - ARCHITECTURE.md §17 (Security & Authorization)
@@ -201,15 +201,15 @@ READ FIRST
 - DOCS/features/payment-core/TECH_SPEC.md §4.3 (Webhook Signing)
 
 WORK ONLY IN
-- shadhinpay-common/
+- conflux-common/
 
-DELIVERABLES (in `com.shadhinpay.common.*`)
+DELIVERABLES (in `pay.conflux.backend.common.*`)
 
 1. `crypto/AesGcmCipher.java`
    - AES-256-GCM with 96-bit IV per encryption, 128-bit auth tag.
    - Methods: `String encrypt(String plaintext, String purpose)` and `String decrypt(String ciphertext, String purpose)`.
    - Output format: Base64 of `IV || ciphertext || tag`.
-   - Master key loaded from env `SHADHINPAY_MASTER_KEY` (32 bytes Base64). Fail fast at startup if missing in non-`dev` profiles.
+   - Master key loaded from env `CONFLUX_MASTER_KEY` (32 bytes Base64). Fail fast at startup if missing in non-`dev` profiles.
    - Per-purpose key derivation via HKDF-SHA256(masterKey, info=purpose). The `purpose` string is the column-level domain (e.g., `vendor-credentials`, `mfa-secret`).
 2. `crypto/HmacSigner.java`
    - `String sign(byte[] payload, String secret)` using HMAC-SHA256, hex-encoded.
@@ -220,7 +220,7 @@ DELIVERABLES (in `com.shadhinpay.common.*`)
    - Reads from `SecurityContextHolder` and a custom `Authentication` principal. Define a small `AuthenticatedPrincipal` record in this same package with fields: `userId`, `userType` (`MERCHANT`/`ADMIN`), `merchantId` (nullable), `businessId` (nullable for non-API-key auth), `environment` (`TEST`/`LIVE`, nullable).
 5. `tenancy/TenantFilterDef.java` — JPA `@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "businessId", type = UUID.class))`. Provide an example marker on a placeholder entity (commented) so feature agents know the pattern.
 6. `tenancy/TenantInterceptor.java` — Spring component (`HandlerInterceptor` or AOP aspect) that, after authentication, enables the `tenantFilter` on the current Hibernate `Session` using `SecurityUtils.currentBusinessId()`. If business context is absent (e.g., admin endpoints), the filter is skipped.
-7. `webhook/WebhookSigner.java` — convenience wrapper around `HmacSigner` that produces the `X-ShadhinPay-Signature` header value for a JSON payload + secret. Documented in Javadoc.
+7. `webhook/WebhookSigner.java` — convenience wrapper around `HmacSigner` that produces the `X-PGW-Signature` header value for a JSON payload + secret. Documented in Javadoc.
 8. `transport/HttpsRedirectConfig.java` — Spring config that emits HSTS header on every response (`Strict-Transport-Security: max-age=31536000; includeSubDomains`).
 
 TESTS
@@ -231,7 +231,7 @@ TESTS
 
 ACCEPTANCE CRITERIA
 - All tests green; coverage ≥ 80% on the `crypto` and `webhook` packages.
-- Application fails to start in `prod`/`staging` profile if `SHADHINPAY_MASTER_KEY` is missing or invalid (verified via a `@SpringBootTest` with profile override).
+- Application fails to start in `prod`/`staging` profile if `CONFLUX_MASTER_KEY` is missing or invalid (verified via a `@SpringBootTest` with profile override).
 - No plaintext secrets ever logged (verified by a static check that no `log.*` call inside `crypto/` or `webhook/` references the secret/key parameter).
 
 FORBIDDEN
@@ -247,30 +247,30 @@ Output: file tree, test results, sample of an encrypted ciphertext (Base64) for 
 ## Prompt 5 — `common`: observability (trace ID + MDC)
 
 ```
-You are adding the global trace ID propagation system to `shadhinpay-common`.
+You are adding the global trace ID propagation system to `conflux-common`.
 
 READ FIRST
 - DOCS/features/common/TECH_SPEC.md §9 (Observability & Traceability)
 
 WORK ONLY IN
-- shadhinpay-common/
+- conflux-common/
 
-DELIVERABLES (in `com.shadhinpay.common.observability.*`)
+DELIVERABLES (in `pay.conflux.backend.common.observability.*`)
 
 1. `TraceIdFilter.java` — servlet `OncePerRequestFilter` that:
-   - Reads `X-ShadhinPay-Trace-ID` from the request; if absent or invalid UUID, generates a new UUID.
+   - Reads `X-PGW-Trace-ID` from the request; if absent or invalid UUID, generates a new UUID.
    - Stores it in SLF4J MDC under key `traceId`.
-   - Writes it back as `X-ShadhinPay-Trace-ID` on the response.
+   - Writes it back as `X-PGW-Trace-ID` on the response.
    - Removes the MDC key in a `finally` block.
 2. `TraceIdContextInitializer.java` — utility for non-HTTP contexts (e.g., scheduled jobs, async event listeners) so they set/clear MDC manually. Provide `runWithTraceId(Runnable)` and `callWithTraceId(Callable)`.
-3. `TraceIdPropagator.java` — for outbound HTTP clients (used by adapters later): a small interceptor that adds `X-ShadhinPay-Trace-ID: <current MDC value>` to outgoing requests. Provide both an OkHttp `Interceptor` and a `RestClient`/`WebClient`-compatible variant.
+3. `TraceIdPropagator.java` — for outbound HTTP clients (used by adapters later): a small interceptor that adds `X-PGW-Trace-ID: <current MDC value>` to outgoing requests. Provide both an OkHttp `Interceptor` and a `RestClient`/`WebClient`-compatible variant.
 4. `LoggingConfig.java` — `@Configuration` that ensures the default Spring Boot console pattern includes `[%X{traceId}]`. Provide a `logback-spring.xml` if needed.
 5. Update existing `GlobalExceptionHandler` (from Prompt 2) to log `traceId` from MDC alongside any error.
 
 TESTS
-- Filter test: request with no header → response has a UUID `X-ShadhinPay-Trace-ID`; MDC contains it during request; MDC is cleared after.
+- Filter test: request with no header → response has a UUID `X-PGW-Trace-ID`; MDC contains it during request; MDC is cleared after.
 - Filter test: request with a valid UUID header → response echoes the same value.
-- Filter test: request with a malformed `X-ShadhinPay-Trace-ID` (non-UUID) → server replaces with a fresh UUID; logs a warn.
+- Filter test: request with a malformed `X-PGW-Trace-ID` (non-UUID) → server replaces with a fresh UUID; logs a warn.
 - Async propagation test: enqueue a task to a `TaskExecutor`, verify the trace ID survives via `TraceIdPropagator`.
 - OkHttp interceptor test (use `MockWebServer`): outbound call carries the current MDC trace ID.
 
@@ -290,7 +290,7 @@ Output: file tree, log sample, test results.
 ## Prompt 6 — Spring Modulith setup + `ApplicationModules.verify()`
 
 ```
-You are wiring Spring Modulith into the ShadhinPay scaffold and adding the verification test that becomes the architectural safety net for every future agent.
+You are wiring Spring Modulith into the ConfluxPay scaffold and adding the verification test that becomes the architectural safety net for every future agent.
 
 READ FIRST
 - ARCHITECTURE.md §21 (Dependency Rules)
@@ -298,22 +298,22 @@ READ FIRST
 - DEVELOPMENT_WORKFLOW.md §3.4 (Wire safety nets into CI), §8 (CI gates)
 
 WORK ONLY IN
-- shadhinpay-application/
-- shadhinpay-common/  (only to add the events package described below)
+- conflux-application/
+- conflux-common/  (only to add the events package described below)
 
 DELIVERABLES
 
-1. `shadhinpay-application/pom.xml` — add `spring-modulith-starter-core`, `spring-modulith-starter-jdbc`, `spring-modulith-starter-test`.
+1. `conflux-application/pom.xml` — add `spring-modulith-starter-core`, `spring-modulith-starter-jdbc`, `spring-modulith-starter-test`.
 
-2. `shadhinpay-application/src/main/resources/db/migration/V0001__modulith_event_publication.sql` — Flyway migration creating the `event_publication` table per Spring Modulith's JDBC schema (look up exact DDL for the chosen Modulith version; do not invent columns).
+2. `conflux-application/src/main/resources/db/migration/V0001__modulith_event_publication.sql` — Flyway migration creating the `event_publication` table per Spring Modulith's JDBC schema (look up exact DDL for the chosen Modulith version; do not invent columns).
 
-3. `shadhinpay-application/src/test/java/com/shadhinpay/architecture/ModularityTests.java`:
+3. `conflux-application/src/test/java/pay/conflux/backend/architecture/ModularityTests.java`:
    - Class with two methods:
-     - `verifyModules()` calls `ApplicationModules.of(ShadhinPayApplication.class).verify()`.
+     - `verifyModules()` calls `ApplicationModules.of(ConfluxPayApplication.class).verify()`.
      - `documentModules()` calls `new Documenter(modules).writeDocumentation()` to emit C4-style PlantUML to `target/spring-modulith-docs`.
    - Both annotated `@Test`. The first MUST fail the build on any forbidden cross-module access.
 
-4. Module declarations: each feature module gets a `package-info.java` at its root package (e.g., `com.shadhinpay.identity`) annotated with `@org.springframework.modulith.ApplicationModule(displayName = "...")`. List explicit `allowedDependencies` per ARCHITECTURE.md and DEVELOPMENT_WORKFLOW.md §3.3:
+4. Module declarations: each feature module gets a `package-info.java` at its root package (e.g., `pay.conflux.backend.identity`) annotated with `@org.springframework.modulith.ApplicationModule(displayName = "...")`. List explicit `allowedDependencies` per ARCHITECTURE.md and DEVELOPMENT_WORKFLOW.md §3.3:
    - `identity` → no dependencies on other features.
    - `provisioning` → `identity`.
    - `payment-core` → `provisioning`, `risk`, `quota`, `adapters`.
@@ -325,14 +325,14 @@ DELIVERABLES
    - `settlement` → `payment-core`, `ledger`.
    - All modules implicitly depend on `common`.
 
-5. Each feature module gets a public sub-package `events` (e.g., `com.shadhinpay.identity.events`). Inside, create empty placeholder so the package exists. Actual event records will be added in Prompt 8.
+5. Each feature module gets a public sub-package `events` (e.g., `pay.conflux.backend.identity.events`). Inside, create empty placeholder so the package exists. Actual event records will be added in Prompt 8.
 
 6. `application.yml`:
    - `spring.modulith.events.jdbc.schema-initialization.enabled: false` (Flyway owns the schema).
    - `spring.modulith.events.republish-outstanding-events-on-restart: true`.
 
 ACCEPTANCE CRITERIA
-- `mvn -pl shadhinpay-application -am test -Dtest=ModularityTests` is green.
+- `mvn -pl conflux-application -am test -Dtest=ModularityTests` is green.
 - `target/spring-modulith-docs/components.puml` (or equivalent) is generated and shows all 9 feature modules + common.
 - The Flyway migration applies cleanly against a Testcontainers Postgres.
 
@@ -356,11 +356,11 @@ READ FIRST
 - ARCHITECTURE.md §4 (Use Cases), §5 (Controllers), §7 (Entities)
 
 WORK ONLY IN
-- shadhinpay-application/src/test/java/com/shadhinpay/architecture/
+- conflux-application/src/test/java/pay/conflux/backend/architecture/
 
 DELIVERABLES
 
-`ArchitectureRulesTest.java` containing the following @ArchTest declarations (use ArchUnit's `@AnalyzeClasses(packages = "com.shadhinpay")`):
+`ArchitectureRulesTest.java` containing the following @ArchTest declarations (use ArchUnit's `@AnalyzeClasses(packages = "pay.conflux.backend")`):
 
 1. `controllers_must_be_in_controller_package` — classes annotated `@RestController` reside in `..controller..`.
 2. `controllers_must_not_access_repositories_directly` — classes in `..controller..` may not depend on classes in `..repository..`.
@@ -373,15 +373,15 @@ DELIVERABLES
 9. `entities_must_not_be_referenced_by_dtos` — classes in `..dto..` may not depend on classes in `..entity..`.
 10. `dtos_must_not_be_referenced_by_entities` — classes in `..entity..` may not depend on classes in `..dto..`.
 11. `repositories_must_be_in_repository_package` — classes annotated `@Repository` reside in `..repository..`.
-12. `feature_packages_must_not_depend_on_other_feature_internals` — for each feature `X`, classes in `com.shadhinpay.X` may only depend on `com.shadhinpay.common..`, `com.shadhinpay.X..`, or `com.shadhinpay.{otherFeature}.events..` and `com.shadhinpay.{otherFeature}.usecase` (interfaces only — verified by name suffix check) — NOT into another feature's `entity`, `repository`, or `mapper`.
+12. `feature_packages_must_not_depend_on_other_feature_internals` — for each feature `X`, classes in `pay.conflux.backend.X` may only depend on `pay.conflux.backend.common..`, `pay.conflux.backend.X..`, or `pay.conflux.backend.{otherFeature}.events..` and `pay.conflux.backend.{otherFeature}.usecase` (interfaces only — verified by name suffix check) — NOT into another feature's `entity`, `repository`, or `mapper`.
 13. `no_field_injection` — no field annotated `@Autowired` on a non-test class. Constructor injection only (Lombok `@RequiredArgsConstructor` is fine).
-14. `no_System_out_or_err` — no class in `com.shadhinpay..` calls `System.out` or `System.err`. Tests excluded.
+14. `no_System_out_or_err` — no class in `pay.conflux.backend..` calls `System.out` or `System.err`. Tests excluded.
 15. `enums_for_status_must_be_String_mapped` — fields annotated `@Enumerated` use `EnumType.STRING`.
 
 For each rule, include a one-line comment explaining which ARCHITECTURE.md section it enforces.
 
 ACCEPTANCE CRITERIA
-- `mvn -pl shadhinpay-application -am test -Dtest=ArchitectureRulesTest` is green against the current scaffold.
+- `mvn -pl conflux-application -am test -Dtest=ArchitectureRulesTest` is green against the current scaffold.
 - Add a deliberately-violating throwaway class in a test resource fixture, verify the relevant rule fails, then remove the fixture.
 
 FORBIDDEN
@@ -395,7 +395,7 @@ Output: list of rules, sample failure output from a deliberately broken case (th
 ## Prompt 8 — Cross-module event contracts
 
 ```
-You are defining every Spring Modulith event that crosses a module boundary in ShadhinPay. Once these are committed, feature agents in Phase 1 cannot change them without coordinated re-planning.
+You are defining every Spring Modulith event that crosses a module boundary in ConfluxPay. Once these are committed, feature agents in Phase 1 cannot change them without coordinated re-planning.
 
 READ FIRST
 - DOCS/features/common/TECH_SPEC.md §5 (Inter-Module Event Delivery)
@@ -410,22 +410,22 @@ Each event lives in the publishing module's `events` sub-package (created in Pro
 
 DELIVERABLES
 
-1. `com.shadhinpay.identity.events.MerchantVerifiedEvent`
+1. `pay.conflux.backend.identity.events.MerchantVerifiedEvent`
    - Fields: `UUID userId`, `UUID merchantProfileId`, `Instant occurredAt`, `String traceId`.
 
-2. `com.shadhinpay.identity.events.UserBlockedEvent`
+2. `pay.conflux.backend.identity.events.UserBlockedEvent`
    - Fields: `UUID userId`, `String reason`, `Instant occurredAt`, `String traceId`.
 
-3. `com.shadhinpay.payment_core.events.PaymentInitiatedEvent`
+3. `pay.conflux.backend.payment_core.events.PaymentInitiatedEvent`
    - Fields: `UUID transactionId`, `UUID merchantId`, `UUID businessId`, `Money amount`, `String vendor`, `String mode`, `String merchantOrderReference`, `Map<String,String> metadata`, `Instant occurredAt`, `String traceId`.
 
-4. `com.shadhinpay.payment_core.events.PaymentCompletedEvent`
+4. `pay.conflux.backend.payment_core.events.PaymentCompletedEvent`
    - Fields: same as PaymentInitiatedEvent plus `String vendorTransactionId`, and `Money platformFee`. Metadata is the carrier for `invoice_id` (used by invoice module).
 
-5. `com.shadhinpay.payment_core.events.PaymentFailedEvent`
+5. `pay.conflux.backend.payment_core.events.PaymentFailedEvent`
    - Fields: `UUID transactionId`, `UUID merchantId`, `UUID businessId`, `String vendor`, `ErrorCode errorCode`, `String reason`, `Map<String,String> metadata`, `Instant occurredAt`, `String traceId`.
 
-6. `com.shadhinpay.payment_core.events.PaymentRefundedEvent`
+6. `pay.conflux.backend.payment_core.events.PaymentRefundedEvent`
    - Fields: `UUID transactionId`, `UUID originalTransactionId`, `Money amount`, `Map<String,String> metadata`, `Instant occurredAt`, `String traceId`.
 
 RULES
@@ -436,7 +436,7 @@ RULES
 - No JPA, no Spring annotations on events. They are pure data.
 
 DOCUMENTATION
-Add a `events.md` file under each module's `src/main/java/com/shadhinpay/{module}/events/` describing what each event signals, when it fires, and which modules currently consume it. Keep concise (one paragraph per event).
+Add a `events.md` file under each module's `src/main/java/pay/conflux/backend/{module}/events/` describing what each event signals, when it fires, and which modules currently consume it. Keep concise (one paragraph per event).
 
 TESTS
 - One unit test per event verifying:
@@ -446,7 +446,7 @@ TESTS
 - A single Modulith-aware integration test that publishes one of each event from a stub use case and verifies it lands in the `event_publication` table (Testcontainers Postgres).
 
 ACCEPTANCE CRITERIA
-- `mvn -pl shadhinpay-application -am test` green.
+- `mvn -pl conflux-application -am test` green.
 - ArchUnit rule (from Prompt 7) `feature_packages_must_not_depend_on_other_feature_internals` still green — events live in publicly-visible sub-packages.
 - Documentation files exist and are non-empty.
 
@@ -478,28 +478,28 @@ Each interface lives in the *owning* module's `usecase` sub-package and is the o
 
 DELIVERABLES (interfaces + small request/response records used by them)
 
-1. `com.shadhinpay.provisioning.usecase`
+1. `pay.conflux.backend.provisioning.usecase`
    - `GetBusinessByApiKeyUseCase` → `BusinessContext execute(String apiKey)`.
    - `GetVendorConfigUseCase` → `VendorConfigDescriptor execute(UUID businessId, String vendor)`.
    - DTOs (records) `BusinessContext` (`UUID businessId`, `UUID merchantId`, `String environment`, `String webhookUrl`) and `VendorConfigDescriptor` (`String vendor`, `String mode`, `Map<String,String> credentialsRefs`). NOTE: `credentialsRefs` is opaque pointers/handles, never plaintext secrets.
 
-2. `com.shadhinpay.risk.usecase`
+2. `pay.conflux.backend.risk.usecase`
    - `EvaluateTransactionUseCase` → `RiskDecision execute(TransactionContext ctx)`.
    - DTOs: `TransactionContext` (merchant id, amount, vendor, customer phone, customer email, ip, metadata), `RiskDecision` (`enum Action {ALLOW, FLAG, BLOCK}`, `int score`, `List<UUID> triggeredRuleIds`, `String reason`).
 
-3. `com.shadhinpay.quota.usecase`
+3. `pay.conflux.backend.quota.usecase`
    - `ReserveQuotaUseCase` → `QuotaReservation execute(UUID merchantId)`.
    - `ConfirmQuotaUseCase` → `void execute(UUID merchantId, UUID reservationId)`.
    - `ReleaseQuotaUseCase` → `void execute(UUID merchantId, UUID reservationId)`.
    - `GetUsageUseCase` → `QuotaUsageView execute(UUID merchantId, String period)`.
    - DTOs: `QuotaReservation` (`UUID reservationId`, `enum Status {FREE, BILLABLE}`), `QuotaUsageView` (used count, free remaining, period).
 
-4. `com.shadhinpay.ledger.usecase`
+4. `pay.conflux.backend.ledger.usecase`
    - `RecordJournalEntryUseCase` → `void execute(JournalEntryRequest request)` (idempotent on `(sourceType, sourceId)`).
    - `GetAccountBalanceUseCase` → `Money execute(UUID ownerId, String accountCode)`.
    - DTOs: `JournalEntryRequest` (`String sourceType`, `String sourceId`, `String description`, `List<PostingRequest> postings`, `Instant occurredAt`), `PostingRequest` (`UUID accountId`, `Money amount`, `enum Type {DEBIT, CREDIT}`).
 
-5. `com.shadhinpay.payment_core.usecase`
+5. `pay.conflux.backend.payment_core.usecase`
    - `InitiatePaymentUseCase` → `PaymentInitiationResult execute(InitiatePaymentRequest request)`. (Called by `invoice` and by the public REST controller.)
    - DTOs: `InitiatePaymentRequest` (`UUID businessId`, `Money amount`, `String vendor`, `String merchantOrderReference`, `String callbackUrl`, `String webhookUrl`, `Map<String,String> metadata`, `String idempotencyKey`), `PaymentInitiationResult` (`UUID transactionId`, `String redirectUrl`, `String status`).
 
@@ -517,7 +517,7 @@ ACCEPTANCE CRITERIA
 - Project compiles.
 - `ApplicationModules.verify()` still green.
 - ArchUnit rule from Prompt 7 still green.
-- Javadoc generation succeeds without warnings (`mvn javadoc:javadoc -pl shadhinpay-application -am`).
+- Javadoc generation succeeds without warnings (`mvn javadoc:javadoc -pl conflux-application -am`).
 
 FORBIDDEN
 - Do NOT add concrete implementations.
@@ -538,9 +538,9 @@ READ FIRST
 - DOCS/features/adapters/PRD.md §4.1 (PaymentProvider Contract)
 
 WORK ONLY IN
-- shadhinpay-adapters/
+- conflux-adapters/
 
-DELIVERABLES (in `com.shadhinpay.adapters.*`)
+DELIVERABLES (in `pay.conflux.backend.adapters.*`)
 
 1. `port/PaymentProvider.java` — interface:
    ```java
@@ -583,7 +583,7 @@ TESTS
 - Unit test on `HttpClientFactory` returning distinct client instances per vendor.
 
 ACCEPTANCE CRITERIA
-- `mvn -pl shadhinpay-adapters -am verify` green.
+- `mvn -pl conflux-adapters -am verify` green.
 - Coverage ≥ 80% on the port + support packages (acceptable to be lower if implementations are small).
 - ArchUnit + Modulith verify still green.
 
@@ -621,8 +621,8 @@ DELIVERABLES
    - `spotbugs-maven-plugin` and `maven-pmd-plugin` configured with conservative rule sets.
    - Gitleaks invoked via the GitHub action — no Maven plugin required.
 
-3. `shadhinpay-application/src/main/java/com/shadhinpay/application/config/OpenApiConfig.java`:
-   - Defines `@Bean OpenAPI` with title `"ShadhinPay API"`, version `"v1"`, contact, license.
+3. `conflux-application/src/main/java/pay/conflux/backend/application/config/OpenApiConfig.java`:
+   - Defines `@Bean OpenAPI` with title `"ConfluxPay API"`, version `"v1"`, contact, license.
    - Adds security scheme `"ApiKeyAuth"` for `Authorization` header with prefix `Bearer ` (placeholder for now; details refined in Phase 1).
 
 4. Commit a *frozen reference* `openapi.json` at `DOCS/contracts/openapi.json`:
@@ -660,7 +660,7 @@ READ FIRST
 
 DELIVERABLES
 
-For each of the 9 feature modules, create `shadhinpay-{module}/CLAUDE.md` using the template below. Customize the "Allowed dependencies" and "Module-specific gotchas" sections per the module's TECH_SPEC.
+For each of the 9 feature modules, create `conflux-{module}/CLAUDE.md` using the template below. Customize the "Allowed dependencies" and "Module-specific gotchas" sections per the module's TECH_SPEC.
 
 TEMPLATE
 ```
@@ -677,13 +677,13 @@ TEMPLATE
 {One paragraph summarizing the module's job from its PRD §1.}
 
 ## Allowed dependencies
-- shadhinpay-common (read-only)
+- conflux-common (read-only)
 - {list of cross-module use-case interfaces this module is allowed to import — copy from DEVELOPMENT_WORKFLOW.md §3.3}
 - {list of cross-module events this module publishes or consumes}
 
 ## Forbidden
 - Reaching into another feature's `repository`, `entity`, or `mapper` packages.
-- Modifying `shadhinpay-common`, the cross-module contracts, or any other feature module.
+- Modifying `conflux-common`, the cross-module contracts, or any other feature module.
 - Skipping the global `ApiResult<T>` envelope.
 - SQL triggers for createdAt/updatedAt — use `@CreationTimestamp`/`@UpdateTimestamp`.
 - Storing plaintext credentials, password hashes, or PII without encryption.
@@ -757,23 +757,23 @@ For each item below, run the listed command and record PASS/FAIL with evidence (
 
 2. **Common module is feature-complete**
    - Verify these classes exist (use `find` or `git ls-files`):
-     - `com.shadhinpay.common.dto.ApiResult`
-     - `com.shadhinpay.common.error.ErrorCode`, `ApiOperationException` and 6+ subclasses
-     - `com.shadhinpay.common.entity.Auditable`, `AuditableAndSoftDeletable`
-     - `com.shadhinpay.common.handler.GlobalExceptionHandler`
-     - `com.shadhinpay.common.constant.Routes`
-     - `com.shadhinpay.common.annotation.UseCase`
-     - `com.shadhinpay.common.money.Money`, `MoneyConverter`
-     - `com.shadhinpay.common.crypto.AesGcmCipher`, `HmacSigner`
-     - `com.shadhinpay.common.security.SecurityUtils`, `AuthenticatedPrincipal`
-     - `com.shadhinpay.common.tenancy.TenantInterceptor`
-     - `com.shadhinpay.common.observability.TraceIdFilter`, `TraceIdPropagator`
-     - `com.shadhinpay.common.webhook.WebhookSigner`
+     - `pay.conflux.backend.common.dto.ApiResult`
+     - `pay.conflux.backend.common.error.ErrorCode`, `ApiOperationException` and 6+ subclasses
+     - `pay.conflux.backend.common.entity.Auditable`, `AuditableAndSoftDeletable`
+     - `pay.conflux.backend.common.handler.GlobalExceptionHandler`
+     - `pay.conflux.backend.common.constant.Routes`
+     - `pay.conflux.backend.common.annotation.UseCase`
+     - `pay.conflux.backend.common.money.Money`, `MoneyConverter`
+     - `pay.conflux.backend.common.crypto.AesGcmCipher`, `HmacSigner`
+     - `pay.conflux.backend.common.security.SecurityUtils`, `AuthenticatedPrincipal`
+     - `pay.conflux.backend.common.tenancy.TenantInterceptor`
+     - `pay.conflux.backend.common.observability.TraceIdFilter`, `TraceIdPropagator`
+     - `pay.conflux.backend.common.webhook.WebhookSigner`
      - All custom validators (PhoneNumber, Email, SafeString)
    - PASS criterion: every file present.
 
 3. **Common coverage ≥ 80%**
-   - `mvn -pl shadhinpay-common -am test`
+   - `mvn -pl conflux-common -am test`
    - Inspect `target/site/jacoco/index.html`.
 
 4. **All cross-module event records exist and compile**
@@ -787,11 +787,11 @@ For each item below, run the listed command and record PASS/FAIL with evidence (
    - Verify Prompt 10 deliverables.
 
 7. **Modulith verify passes on the empty modules**
-   - `mvn -pl shadhinpay-application -am test -Dtest=ModularityTests`
+   - `mvn -pl conflux-application -am test -Dtest=ModularityTests`
    - PASS criterion: green.
 
 8. **ArchUnit suite is green**
-   - `mvn -pl shadhinpay-application -am test -Dtest=ArchitectureRulesTest`
+   - `mvn -pl conflux-application -am test -Dtest=ArchitectureRulesTest`
 
 9. **CI pipeline runs green on a sample PR**
    - Either link to a successful CI run OR run `act` locally (`act pull_request`) and capture log.

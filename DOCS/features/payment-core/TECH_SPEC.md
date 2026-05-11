@@ -1,4 +1,4 @@
-# Tech Spec - Payment Core (shadhinpay-payment-core)
+# Tech Spec - Payment Core (conflux-payment-core)
 
 ## 1. Architecture
 Follows Hexagonal Architecture. This module is the "Orchestrator" that coordinates between Merchants, MFS Adapters, and the Ledger.
@@ -44,7 +44,7 @@ Follows Hexagonal Architecture. This module is the "Orchestrator" that coordinat
 *   `HandleWebhookRetryUseCase`: Background job for retrying failed merchant notifications.
 
 ### 3.2 Outbound Ports (Adapters)
-*   **MFS Port:** A common interface that all `shadhinpay-adapters` must implement.
+*   **MFS Port:** A common interface that all `conflux-adapters` must implement.
 *   **Event Publisher:** Spring Modulith publisher for `PaymentCompletedEvent`.
 
 ## 4. Business Logic Rules

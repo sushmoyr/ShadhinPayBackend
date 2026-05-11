@@ -1,4 +1,4 @@
-# PRD - Quota & Metering (shadhinpay-quota)
+# PRD - Quota & Metering (conflux-quota)
 
 ## 1. Purpose
 To manage and enforce usage-based limits for merchants, specifically the free-tier quota for transactions processed in **Partner Mode**. This module ensures accurate tracking of usage to trigger appropriate billing via the Ledger module.

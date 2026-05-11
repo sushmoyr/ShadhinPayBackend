@@ -5,22 +5,22 @@ partner integrations) before the corresponding backend endpoints land.
 
 ## `openapi.json`
 
-The Phase 0 frozen reference of the ShadhinPay backend OpenAPI document. The frontend agent
+The Phase 0 frozen reference of the ConfluxPay backend OpenAPI document. The frontend agent
 uses this file as its **single source of truth** for request/response types and routing until
 Phase 1 Wave B introduces the first real controllers.
 
 ### How it is generated
 
-`shadhinpay-application` exposes an opt-in Maven profile that boots the Spring Boot application
+`conflux-application` exposes an opt-in Maven profile that boots the Spring Boot application
 under the `openapi` Spring profile (H2 in-memory, Flyway off, permissive security) and lets
 `springdoc-openapi-maven-plugin` scrape `/v3/api-docs`:
 
 ```bash
-mvn -pl shadhinpay-application -am -Popenapi -DskipTests=true verify
+mvn -pl conflux-application -am -Popenapi -DskipTests=true verify
 ```
 
-The emitted file lands at `shadhinpay-application/target/openapi/openapi.json`. To refresh the
-frozen reference, copy that file into this directory (preserving the `x-shadhinpay-*` header
+The emitted file lands at `conflux-application/target/openapi/openapi.json`. To refresh the
+frozen reference, copy that file into this directory (preserving the `x-conflux-*` header
 extensions and a stable `servers[0].url`).
 
 ### Breaking-change policy
@@ -44,5 +44,5 @@ require the label but the frontend agent should still be notified in the PR desc
 ### Validation
 
 The frontend agent should validate any consumed copy with a standard OpenAPI 3.0.x validator
-(`swagger-cli validate`, `openapi-typescript`, etc.). The `x-shadhinpay-*` extension fields
+(`swagger-cli validate`, `openapi-typescript`, etc.). The `x-conflux-*` extension fields
 are intentional; they document provenance and are ignored by spec-compliant tooling.

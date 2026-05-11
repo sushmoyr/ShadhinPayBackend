@@ -1,4 +1,4 @@
-# PRD - Invoice Management (shadhinpay-invoice)
+# PRD - Invoice Management (conflux-invoice)
 
 ## 1. Purpose
 The Invoice Management module allows merchants to create, send, and manage digital invoices. It provides a public-facing payment page where customers can settle their bills using any supported MFS or card provider. This abstracts the payment process into a shareable link or QR code.
@@ -39,7 +39,7 @@ The Invoice Management module allows merchants to create, send, and manage digit
 6.  **FAILED:** Underlying payment attempts have all failed (or specific business failure).
 
 ### 4.3 Public Payment Page
-*   A dedicated URL namespace: `request.shadhinpay.com/invoices/v1/{slug}`.
+*   A dedicated URL namespace: `request.conflux.com/invoices/v1/{slug}`.
 *   Displays merchant logo (from `provisioning` module), items, and a "Pay Now" button.
 *   "Pay Now" initiates a transaction in `payment-core`.
 
@@ -52,7 +52,7 @@ The Invoice Management module allows merchants to create, send, and manage digit
 
 ## 5. Non-Functional Requirements
 *   **Security:** Invoice slugs must be cryptographically long and unpredictable (e.g., UUID-based) to prevent enumeration attacks.
-*   **Branding:** Use a standard, responsive ShadhinPay template that dynamically loads the merchant's logo.
+*   **Branding:** Use a standard, responsive ConfluxPay template that dynamically loads the merchant's logo.
 *   **Integrity:** The link between an Invoice and its generated Payment in `payment-core` must be immutable.
 
 ## 6. Acceptance Criteria

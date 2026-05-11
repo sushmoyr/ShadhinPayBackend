@@ -1,7 +1,7 @@
-# PRD - MFS Adapter Library (shadhinpay-adapters)
+# PRD - MFS Adapter Library (conflux-adapters)
 
 ## 1. Purpose
-To provide a unified, abstract layer for communicating with diverse Mobile Financial Services (MFS) and card payment providers (bKash, Nagad, Rocket, Stripe, etc.). This module isolates the specific API quirks, authentication flows, and data formats of each vendor from ShadhinPay's core business logic.
+To provide a unified, abstract layer for communicating with diverse Mobile Financial Services (MFS) and card payment providers (bKash, Nagad, Rocket, Stripe, etc.). This module isolates the specific API quirks, authentication flows, and data formats of each vendor from ConfluxPay's core business logic.
 
 ## 2. Target Audience
 *   **Developers:** Who need to add new payment providers without touching the `payment-core`.
@@ -24,14 +24,14 @@ Every adapter must implement a common interface with the following methods:
 *   `verifyWebhook(IncomingWebhook)`: Validates the vendor's signature.
 
 ### 4.2 Centralized Token Management
-*   The system must maintain a `shadhinpay-token-service` (part of the library/infrastructure layer) to handle the lifecycle of bKash/Nagad session tokens.
+*   The system must maintain a `conflux-token-service` (part of the library/infrastructure layer) to handle the lifecycle of bKash/Nagad session tokens.
 *   Tokens must be cached in **Redis** with TTLs matching the vendor's expiration policy.
 
 ### 4.3 Automated Reconciliation (Polling)
 *   The system must support "Active Polling." If a transaction remains in `PENDING` status for more than 5 minutes, the adapter's `queryStatus` method is triggered automatically by a background worker.
 
 ### 4.4 Error Mapping
-*   Vendor-specific error codes (e.g., "bKash 2023: Insufficient Balance") must be mapped to ShadhinPay's `ErrorCode.INSUFFICIENT_FUNDS`.
+*   Vendor-specific error codes (e.g., "bKash 2023: Insufficient Balance") must be mapped to ConfluxPay's `ErrorCode.INSUFFICIENT_FUNDS`.
 
 ## 5. Non-Functional Requirements
 *   **Isolation:** Each adapter must use a dedicated **OkHTTP Client** instance to prevent connection pool exhaustion from one vendor affecting others.
@@ -39,6 +39,6 @@ Every adapter must implement a common interface with the following methods:
 *   **Observability:** Every outgoing request must be logged with the `transaction_id` for debugging.
 
 ## 6. Acceptance Criteria
-*   Adding a new MFS provider requires zero changes to the `shadhinpay-payment-core` module.
+*   Adding a new MFS provider requires zero changes to the `conflux-payment-core` module.
 *   The system can recover the state of a "lost" transaction via automated polling.
-*   Vendor credentials from `shadhinpay-provisioning` are correctly applied to the outgoing requests.
+*   Vendor credentials from `conflux-provisioning` are correctly applied to the outgoing requests.

@@ -1,4 +1,4 @@
-# Tech Spec - Financial Ledger (shadhinpay-ledger)
+# Tech Spec - Financial Ledger (conflux-ledger)
 
 ## 1. System Architecture
 This module follows the **Hexagonal Architecture** pattern defined in `ARCHITECTURE.md`. It acts as a downstream consumer of payment events and an upstream provider of balance information.
@@ -58,7 +58,7 @@ A single debit or credit entry.
 *   `JournalRepository`: JPA Repository for auditing.
 
 ### 3.3 Event Consumers
-The ledger module consumes events published by `shadhinpay-payment-core` via the **Spring Modulith Event Publication Registry** (see `common` §5). Listeners use `@TransactionalEventListener(phase = AFTER_COMMIT)` so postings are only recorded after the source transaction has committed; incomplete publications are replayed on application restart.
+The ledger module consumes events published by `conflux-payment-core` via the **Spring Modulith Event Publication Registry** (see `common` §5). Listeners use `@TransactionalEventListener(phase = AFTER_COMMIT)` so postings are only recorded after the source transaction has committed; incomplete publications are replayed on application restart.
 
 *   `PaymentCapturedEvent` -> Triggers:
     1. Debit `ESCROW`

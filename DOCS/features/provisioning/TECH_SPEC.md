@@ -1,4 +1,4 @@
-# Tech Spec - Business Provisioning & API Management (shadhinpay-provisioning)
+# Tech Spec - Business Provisioning & API Management (conflux-provisioning)
 
 ## 1. Architecture
 Follows Hexagonal Architecture. This module provides the "Context" (Business rules + Credentials) for every API request.
@@ -63,8 +63,8 @@ Configuration per MFS provider for a specific business.
 ### 4.3 Webhook Integrity & Transport
 *   **Mandatory HTTPS:** Webhook URLs provided by merchants must use `https://`.
 *   **HMAC Signing:** All payloads must be signed using `HMAC-SHA256` with the `webhookSecret`.
-*   **Integrity Header:** The resulting signature must be sent in the `X-ShadhinPay-Signature` header.
-*   **Data Integrity:** This allows merchants to verify that the payload was not tampered with during transit and that it originated from ShadhinPay.
+*   **Integrity Header:** The resulting signature must be sent in the `X-PGW-Signature` header.
+*   **Data Integrity:** This allows merchants to verify that the payload was not tampered with during transit and that it originated from ConfluxPay.
 
 ## 5. Implementation Details
 

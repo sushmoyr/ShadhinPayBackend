@@ -1,7 +1,7 @@
-# PRD - Financial Ledger (shadhinpay-ledger)
+# PRD - Financial Ledger (conflux-ledger)
 
 ## 1. Purpose
-The Financial Ledger is the "Source of Truth" for all monetary movement within ShadhinPay. It ensures financial integrity through double-entry bookkeeping, providing a clear audit trail for merchants, platform managers, and regulatory bodies.
+The Financial Ledger is the "Source of Truth" for all monetary movement within ConfluxPay. It ensures financial integrity through double-entry bookkeeping, providing a clear audit trail for merchants, platform managers, and regulatory bodies.
 
 ## 2. Target Audience
 *   **Merchants:** To view accurate balances and transaction history.
@@ -20,7 +20,7 @@ The Financial Ledger is the "Source of Truth" for all monetary movement within S
 The system must support the following internal account types:
 *   **Assets:** `CASH_AT_BANK` (Real money held in MFS/Bank accounts).
 *   **Liabilities:** `MERCHANT_PAYABLE` (Funds owed to merchants), `VENDOR_PAYABLE` (Fees owed to MFS providers).
-*   **Equity/Revenue:** `PLATFORM_REVENUE` (Transaction fees earned by ShadhinPay).
+*   **Equity/Revenue:** `PLATFORM_REVENUE` (Transaction fees earned by ConfluxPay).
 *   **Clearing:** `ESCROW` (Funds in transit/pending settlement).
 
 ### 4.2 Double-Entry Bookkeeping

@@ -1,6 +1,6 @@
-# ShadhinPay
+# ConfluxPay
 
-Spring Boot 3 / Java 21 / Spring Modulith multi-module monolith for the ShadhinPay payment platform.
+Spring Boot 3 / Java 21 / Spring Modulith multi-module monolith for the ConfluxPay payment platform.
 
 ## Documents
 

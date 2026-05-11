@@ -1,7 +1,7 @@
-# Tech Spec - Common Shared Library (shadhinpay-common)
+# Tech Spec - Common Shared Library (conflux-common)
 
 ## 1. Purpose
-The `shadhinpay-common` module provides the foundational classes, utilities, and contracts shared across all Maven modules in the ShadhinPay monolith. It ensures consistency in API responses, error handling, and data persistence patterns.
+The `conflux-common` module provides the foundational classes, utilities, and contracts shared across all Maven modules in the ConfluxPay monolith. It ensures consistency in API responses, error handling, and data persistence patterns.
 
 ## 2. API Response Envelope
 All modules must return the `ApiResult<T>` envelope for REST endpoints.
@@ -42,7 +42,7 @@ A centralized enum to prevent duplicate error definitions.
 *   Rounding Mode: `HALF_EVEN` (Banker's Rounding).
 
 ## 4. Exception Hierarchy
-*   `shadhinpay-common` defines the `BaseException` (Runtime) which includes `ErrorCode` and `HttpStatus`.
+*   `conflux-common` defines the `BaseException` (Runtime) which includes `ErrorCode` and `HttpStatus`.
 *   Global `ExceptionTranslator` (Spring `@ControllerAdvice`) handles these exceptions and converts them to `ApiResult.error()`.
 
 ## 5. Inter-Module Event Delivery (Spring Modulith)
@@ -88,14 +88,14 @@ A `SecurityUtils` helper to retrieve the `currentMerchantId()`, `currentBusiness
 - **HSTS:** Strict-Transport-Security headers must be enforced to prevent downgrade attacks.
 
 ### 8.2 Webhook Integrity (HMAC)
-- All outgoing webhook notifications must include a `X-ShadhinPay-Signature` header.
+- All outgoing webhook notifications must include a `X-PGW-Signature` header.
 - **Algorithm:** HMAC-SHA256.
 - **Payload:** The signature is calculated over the raw JSON request body using the merchant's `webhookSecret`.
 - **Implementation:** Shared utility in `common` for generating and verifying these signatures.
 
 ## 9. Observability & Traceability
 ### 9.1 Global Correlation ID
-- **X-ShadhinPay-Trace-ID:** Every incoming request must be assigned a unique UUID.
+- **X-PGW-Trace-ID:** Every incoming request must be assigned a unique UUID.
 - **Propagation:** This ID must be stored in the SLF4J **MDC (Mapped Diagnostic Context)**.
 - **Internal:** Must be included in all Spring Modulith event payloads.
 - **External:** Must be sent as a header to all MFS vendors and returned in the final API response for debugging.
