@@ -1,15 +1,16 @@
 package com.shadhinpay.identity.usecase.impl;
 
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.error.DuplicateResourceException;
 import com.shadhinpay.common.util.IdentifierDetector;
 import com.shadhinpay.identity.dto.MerchantOnboardingDto;
 import com.shadhinpay.identity.dto.RegisterMerchantRequest;
 import com.shadhinpay.identity.entity.MerchantProfile;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.IdentifierType;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
-import com.shadhinpay.identity.entity.enums.UserStatus;
-import com.shadhinpay.identity.entity.enums.UserType;
+import com.shadhinpay.identity.enums.IdentifierType;
+import com.shadhinpay.identity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.UserStatus;
+import com.shadhinpay.identity.enums.UserType;
 import com.shadhinpay.identity.mapper.MerchantProfileMapper;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import com.shadhinpay.identity.repository.UserRepository;
@@ -17,10 +18,9 @@ import com.shadhinpay.identity.usecase.RegisterMerchantUseCase;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@UseCase
 @RequiredArgsConstructor
 public class RegisterMerchantUseCaseImpl implements RegisterMerchantUseCase {
 

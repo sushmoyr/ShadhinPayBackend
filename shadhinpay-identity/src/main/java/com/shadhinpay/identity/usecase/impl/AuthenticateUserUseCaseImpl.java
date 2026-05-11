@@ -2,6 +2,7 @@ package com.shadhinpay.identity.usecase.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.crypto.HmacSigner;
 import com.shadhinpay.common.error.UnauthorizedException;
 import com.shadhinpay.common.util.IdentifierDetector;
@@ -9,8 +10,8 @@ import com.shadhinpay.identity.dto.AuthToken;
 import com.shadhinpay.identity.dto.LoginRequest;
 import com.shadhinpay.identity.dto.LoginResponse;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.IdentifierType;
-import com.shadhinpay.identity.entity.enums.UserStatus;
+import com.shadhinpay.identity.enums.IdentifierType;
+import com.shadhinpay.identity.enums.UserStatus;
 import com.shadhinpay.identity.repository.UserRepository;
 import com.shadhinpay.identity.usecase.AuthenticateUserUseCase;
 import java.nio.charset.StandardCharsets;
@@ -18,17 +19,24 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Base64;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
-@Service
+@UseCase
 @RequiredArgsConstructor
 public class AuthenticateUserUseCaseImpl implements AuthenticateUserUseCase {
+
+  /**
+   * Pre-computed BCrypt hash compared against when the lookup misses, so the failure path takes the
+   * same time as a real password check. Closes the username-enumeration timing side channel.
+   */
+  private static final String DUMMY_HASH = new BCryptPasswordEncoder(10).encode("__dummy__");
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
@@ -45,25 +53,21 @@ public class AuthenticateUserUseCaseImpl implements AuthenticateUserUseCase {
         IdentifierDetector.detect(request.identifier());
     IdentifierType identifierType = IdentifierType.valueOf(commonType.name());
 
-    User user =
-        userRepository
-            .findByIdentifierAndIdentifierTypeAndDeletedFalse(request.identifier(), identifierType)
-            .orElseThrow(
-                () -> {
-                  log.warn("Login failed: user not found for identifier {}", request.identifier());
-                  return new UnauthorizedException("Invalid credentials");
-                });
+    Optional<User> userOpt =
+        userRepository.findByIdentifierAndIdentifierTypeAndDeletedFalse(
+            request.identifier(), identifierType);
 
-    if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-      log.warn("Login failed: password mismatch for identifier {}", request.identifier());
+    String hashToCompare = userOpt.map(User::getPasswordHash).orElse(DUMMY_HASH);
+    boolean passwordMatches = passwordEncoder.matches(request.password(), hashToCompare);
+
+    if (userOpt.isEmpty() || !passwordMatches) {
+      log.warn("Login failed: invalid credentials");
       throw new UnauthorizedException("Invalid credentials");
     }
 
+    User user = userOpt.get();
     if (user.getStatus() != UserStatus.ACTIVE) {
-      log.warn(
-          "Login failed: user status is {} for identifier {}",
-          user.getStatus(),
-          request.identifier());
+      log.warn("Login failed: user {} status {}", user.getId(), user.getStatus());
       throw new UnauthorizedException("Invalid credentials");
     }
 
@@ -71,6 +75,7 @@ public class AuthenticateUserUseCaseImpl implements AuthenticateUserUseCase {
     userRepository.save(user);
 
     String token = issueStubToken(user);
+    log.info("Login success for user {}", user.getId());
 
     return new LoginResponse(token, user.getId(), user.getUserType());
   }

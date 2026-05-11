@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 
 import com.shadhinpay.common.error.InvalidOperationStateException;
 import com.shadhinpay.identity.entity.MerchantProfile;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import com.shadhinpay.identity.events.MerchantVerifiedEvent;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import java.util.Optional;

@@ -1,9 +1,10 @@
 package com.shadhinpay.identity.usecase.impl;
 
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.identity.dto.MerchantSummaryDto;
 import com.shadhinpay.identity.entity.MerchantProfile;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import com.shadhinpay.identity.repository.UserRepository;
 import com.shadhinpay.identity.spec.MerchantSpec;
@@ -12,10 +13,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@UseCase
 @RequiredArgsConstructor
 public class GetMerchantProfilesUseCaseImpl implements GetMerchantProfilesUseCase {
 

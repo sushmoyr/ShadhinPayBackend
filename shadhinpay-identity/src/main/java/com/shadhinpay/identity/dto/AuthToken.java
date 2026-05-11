@@ -1,6 +1,6 @@
 package com.shadhinpay.identity.dto;
 
-import com.shadhinpay.identity.entity.enums.UserType;
+import com.shadhinpay.identity.enums.UserType;
 import java.time.Instant;
 import java.util.UUID;
 

@@ -7,7 +7,7 @@ import static org.mockito.Mockito.when;
 import com.shadhinpay.identity.dto.MerchantSummaryDto;
 import com.shadhinpay.identity.entity.MerchantProfile;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import com.shadhinpay.identity.repository.UserRepository;
 import java.time.LocalDateTime;

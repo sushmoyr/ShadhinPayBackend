@@ -1,7 +1,7 @@
 package com.shadhinpay.identity.repository;
 
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.IdentifierType;
+import com.shadhinpay.identity.enums.IdentifierType;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;

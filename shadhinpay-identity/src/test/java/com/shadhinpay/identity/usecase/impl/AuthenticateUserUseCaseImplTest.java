@@ -13,9 +13,9 @@ import com.shadhinpay.common.error.UnauthorizedException;
 import com.shadhinpay.identity.dto.LoginRequest;
 import com.shadhinpay.identity.dto.LoginResponse;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.IdentifierType;
-import com.shadhinpay.identity.entity.enums.UserStatus;
-import com.shadhinpay.identity.entity.enums.UserType;
+import com.shadhinpay.identity.enums.IdentifierType;
+import com.shadhinpay.identity.enums.UserStatus;
+import com.shadhinpay.identity.enums.UserType;
 import com.shadhinpay.identity.repository.UserRepository;
 import java.util.Optional;
 import java.util.UUID;
@@ -61,6 +61,30 @@ class AuthenticateUserUseCaseImplTest {
 
     when(userRepository.findByIdentifierAndIdentifierTypeAndDeletedFalse(
             anyString(), any(IdentifierType.class)))
+        .thenReturn(Optional.of(user));
+    when(passwordEncoder.matches("password123", "hashed_password")).thenReturn(true);
+    when(hmacSigner.sign(any(), anyString())).thenReturn("signature");
+
+    LoginResponse result = useCase.execute(request);
+
+    assertThat(result.userId()).isEqualTo(user.getId());
+    assertThat(result.userType()).isEqualTo(UserType.MERCHANT);
+    assertThat(result.authToken()).contains(".");
+  }
+
+  @Test
+  void execute_happyPathEmail() {
+    LoginRequest request = new LoginRequest("merchant@example.com", "password123");
+    User user = new User();
+    user.setId(UUID.randomUUID());
+    user.setIdentifier("merchant@example.com");
+    user.setIdentifierType(IdentifierType.EMAIL);
+    user.setPasswordHash("hashed_password");
+    user.setStatus(UserStatus.ACTIVE);
+    user.setUserType(UserType.MERCHANT);
+
+    when(userRepository.findByIdentifierAndIdentifierTypeAndDeletedFalse(
+            "merchant@example.com", IdentifierType.EMAIL))
         .thenReturn(Optional.of(user));
     when(passwordEncoder.matches("password123", "hashed_password")).thenReturn(true);
     when(hmacSigner.sign(any(), anyString())).thenReturn("signature");

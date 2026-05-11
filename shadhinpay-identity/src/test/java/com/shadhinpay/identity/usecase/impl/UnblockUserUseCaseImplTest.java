@@ -7,7 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.UserStatus;
+import com.shadhinpay.identity.enums.UserStatus;
 import com.shadhinpay.identity.repository.UserRepository;
 import java.util.Optional;
 import java.util.UUID;

@@ -1,9 +1,10 @@
 package com.shadhinpay.identity.usecase.impl;
 
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.error.InvalidOperationStateException;
 import com.shadhinpay.common.error.ResourceNotFoundException;
 import com.shadhinpay.identity.entity.MerchantProfile;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import com.shadhinpay.identity.events.MerchantVerifiedEvent;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import com.shadhinpay.identity.usecase.VerifyMerchantUseCase;
@@ -12,10 +13,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@UseCase
 @RequiredArgsConstructor
 public class VerifyMerchantUseCaseImpl implements VerifyMerchantUseCase {
 

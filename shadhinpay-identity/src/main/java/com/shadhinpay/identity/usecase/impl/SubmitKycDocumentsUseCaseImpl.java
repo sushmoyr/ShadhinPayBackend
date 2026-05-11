@@ -2,23 +2,23 @@ package com.shadhinpay.identity.usecase.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.error.InvalidOperationStateException;
 import com.shadhinpay.common.error.ResourceNotFoundException;
 import com.shadhinpay.identity.dto.KycSubmissionRequest;
 import com.shadhinpay.identity.dto.MerchantOnboardingDto;
 import com.shadhinpay.identity.entity.MerchantProfile;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import com.shadhinpay.identity.mapper.MerchantProfileMapper;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import com.shadhinpay.identity.repository.UserRepository;
 import com.shadhinpay.identity.usecase.SubmitKycDocumentsUseCase;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@UseCase
 @RequiredArgsConstructor
 public class SubmitKycDocumentsUseCaseImpl implements SubmitKycDocumentsUseCase {
 

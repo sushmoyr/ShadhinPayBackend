@@ -1,7 +1,8 @@
 package com.shadhinpay.identity.spec;
 
 import com.shadhinpay.identity.entity.MerchantProfile;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
+import java.time.Instant;
 import java.util.Locale;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -24,6 +25,21 @@ public final class MerchantSpec {
         return cb.conjunction();
       }
       return cb.like(cb.lower(root.get("fullName")), "%" + search.toLowerCase(Locale.ROOT) + "%");
+    };
+  }
+
+  public static Specification<MerchantProfile> createdBetween(Instant from, Instant to) {
+    return (root, query, cb) -> {
+      if (from == null && to == null) {
+        return cb.conjunction();
+      }
+      if (from != null && to != null) {
+        return cb.between(root.get("createdAt"), from, to);
+      }
+      if (from != null) {
+        return cb.greaterThanOrEqualTo(root.get("createdAt"), from);
+      }
+      return cb.lessThanOrEqualTo(root.get("createdAt"), to);
     };
   }
 }

@@ -1,8 +1,8 @@
 package com.shadhinpay.identity.dto;
 
-import com.shadhinpay.identity.entity.enums.IdentifierType;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
-import com.shadhinpay.identity.entity.enums.UserStatus;
+import com.shadhinpay.identity.enums.IdentifierType;
+import com.shadhinpay.identity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.UserStatus;
 import java.util.UUID;
 
 public record MerchantOnboardingDto(

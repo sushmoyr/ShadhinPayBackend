@@ -2,9 +2,9 @@ package com.shadhinpay.identity.entity;
 
 import com.shadhinpay.common.entity.AuditableAndSoftDeletable;
 import com.shadhinpay.identity.entity.converter.MfaSecretConverter;
-import com.shadhinpay.identity.entity.enums.IdentifierType;
-import com.shadhinpay.identity.entity.enums.UserStatus;
-import com.shadhinpay.identity.entity.enums.UserType;
+import com.shadhinpay.identity.enums.IdentifierType;
+import com.shadhinpay.identity.enums.UserStatus;
+import com.shadhinpay.identity.enums.UserType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

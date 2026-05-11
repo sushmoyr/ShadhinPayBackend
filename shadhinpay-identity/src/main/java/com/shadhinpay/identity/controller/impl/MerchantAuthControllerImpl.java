@@ -8,8 +8,10 @@ import com.shadhinpay.identity.dto.MerchantOnboardingDto;
 import com.shadhinpay.identity.dto.RegisterMerchantRequest;
 import com.shadhinpay.identity.usecase.AuthenticateUserUseCase;
 import com.shadhinpay.identity.usecase.RegisterMerchantUseCase;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -21,12 +23,12 @@ public class MerchantAuthControllerImpl implements MerchantAuthController {
 
   @Override
   public ResponseEntity<ApiResult<MerchantOnboardingDto>> register(
-      RegisterMerchantRequest request) {
+      @Valid @RequestBody RegisterMerchantRequest request) {
     return ApiResult.created(registerMerchantUseCase.execute(request));
   }
 
   @Override
-  public ResponseEntity<ApiResult<LoginResponse>> login(LoginRequest request) {
+  public ResponseEntity<ApiResult<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
     return ApiResult.ok(authenticateUserUseCase.execute(request));
   }
 }

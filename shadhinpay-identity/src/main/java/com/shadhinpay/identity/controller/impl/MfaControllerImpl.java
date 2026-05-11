@@ -21,17 +21,20 @@ public class MfaControllerImpl implements MfaController {
   private final VerifyMfaUseCase verifyMfaUseCase;
   private final DisableMfaUseCase disableMfaUseCase;
 
+  // TODO(wave-b): replace @RequestHeader("X-User-Id") with SecurityContextHolder principal.
   @Override
   public ResponseEntity<ApiResult<MfaEnableResponse>> enable(UUID userId) {
     return ApiResult.ok(enableMfaUseCase.execute(userId));
   }
 
+  // TODO(wave-b): replace @RequestHeader("X-User-Id") with SecurityContextHolder principal.
   @Override
   public ResponseEntity<ApiResult<Void>> verify(UUID userId, MfaVerifyRequest request) {
     verifyMfaUseCase.execute(userId, request.code());
     return ApiResult.ok();
   }
 
+  // TODO(wave-b): replace @RequestHeader("X-User-Id") with SecurityContextHolder principal.
   @Override
   public ResponseEntity<ApiResult<Void>> disable(UUID userId, MfaDisableRequest request) {
     disableMfaUseCase.execute(userId, request.password());

@@ -16,8 +16,8 @@ import com.shadhinpay.identity.events.UserBlockedEvent;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import com.shadhinpay.identity.repository.UserRepository;
 import java.util.UUID;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,9 +36,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @ApplicationModuleTest // Ensures events are captured
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
+@DisabledIfSystemProperty(named = "skipDocker", matches = "true")
 @ActiveProfiles("test")
-@Disabled("Testcontainers not available locally")
 class IdentityIntegrationTest {
 
   @Container
@@ -123,7 +123,7 @@ class IdentityIntegrationTest {
     var user =
         userRepository
             .findByIdentifierAndIdentifierTypeAndDeletedFalse(
-                identifier, com.shadhinpay.identity.entity.enums.IdentifierType.PHONE)
+                identifier, com.shadhinpay.identity.enums.IdentifierType.PHONE)
             .orElseThrow();
     user.setDeleted(true);
     userRepository.save(user);

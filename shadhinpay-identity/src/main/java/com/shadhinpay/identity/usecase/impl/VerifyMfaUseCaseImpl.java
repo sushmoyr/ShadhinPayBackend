@@ -25,7 +25,14 @@ public class VerifyMfaUseCaseImpl implements VerifyMfaUseCase {
 
   private final TimeProvider timeProvider = new SystemTimeProvider();
   private final CodeGenerator codeGenerator = new DefaultCodeGenerator();
-  private final CodeVerifier verifier = new DefaultCodeVerifier(codeGenerator, timeProvider);
+  private final DefaultCodeVerifier defaultVerifier =
+      new DefaultCodeVerifier(codeGenerator, timeProvider);
+  private final CodeVerifier verifier = configureVerifier(defaultVerifier);
+
+  private static CodeVerifier configureVerifier(DefaultCodeVerifier verifier) {
+    verifier.setAllowedTimePeriodDiscrepancy(1);
+    return verifier;
+  }
 
   @Override
   @Transactional(readOnly = true)

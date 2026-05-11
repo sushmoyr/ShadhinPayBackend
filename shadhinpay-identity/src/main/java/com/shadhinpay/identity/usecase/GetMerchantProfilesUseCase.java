@@ -1,7 +1,7 @@
 package com.shadhinpay.identity.usecase;
 
 import com.shadhinpay.identity.dto.MerchantSummaryDto;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

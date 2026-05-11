@@ -1,5 +1,6 @@
 package com.shadhinpay.identity.usecase.impl;
 
+import com.shadhinpay.common.annotation.UseCase;
 import com.shadhinpay.common.error.ResourceNotFoundException;
 import com.shadhinpay.identity.dto.MerchantOnboardingDto;
 import com.shadhinpay.identity.entity.MerchantProfile;
@@ -10,10 +11,9 @@ import com.shadhinpay.identity.repository.UserRepository;
 import com.shadhinpay.identity.usecase.GetMerchantProfileUseCase;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@UseCase
 @RequiredArgsConstructor
 public class GetMerchantProfileUseCaseImpl implements GetMerchantProfileUseCase {
 

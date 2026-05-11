@@ -7,9 +7,9 @@ import com.shadhinpay.common.error.InvalidOperationStateException;
 import com.shadhinpay.common.error.UnauthorizedException;
 import com.shadhinpay.identity.dto.MfaEnableResponse;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.IdentifierType;
-import com.shadhinpay.identity.entity.enums.UserStatus;
-import com.shadhinpay.identity.entity.enums.UserType;
+import com.shadhinpay.identity.enums.IdentifierType;
+import com.shadhinpay.identity.enums.UserStatus;
+import com.shadhinpay.identity.enums.UserType;
 import com.shadhinpay.identity.repository.UserRepository;
 import com.shadhinpay.identity.usecase.DisableMfaUseCase;
 import com.shadhinpay.identity.usecase.EnableMfaUseCase;
@@ -22,14 +22,7 @@ import dev.samstevens.totp.time.TimeProvider;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,7 +35,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest
-@Testcontainers
+@Testcontainers(disabledWithoutDocker = true)
+@DisabledIfSystemProperty(named = "skipDocker", matches = "true")
 @ActiveProfiles("test")
 class MfaIntegrationTest {
 

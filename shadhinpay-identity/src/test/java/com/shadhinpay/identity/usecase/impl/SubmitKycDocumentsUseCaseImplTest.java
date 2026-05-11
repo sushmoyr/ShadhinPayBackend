@@ -12,7 +12,7 @@ import com.shadhinpay.identity.dto.KycSubmissionRequest;
 import com.shadhinpay.identity.dto.MerchantOnboardingDto;
 import com.shadhinpay.identity.entity.MerchantProfile;
 import com.shadhinpay.identity.entity.User;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import com.shadhinpay.identity.mapper.MerchantProfileMapper;
 import com.shadhinpay.identity.repository.MerchantProfileRepository;
 import com.shadhinpay.identity.repository.UserRepository;

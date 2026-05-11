@@ -10,22 +10,25 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shadhinpay.identity.constant.IdentityRoutes;
+import com.shadhinpay.identity.controller.impl.MerchantOnboardingControllerImpl;
 import com.shadhinpay.identity.dto.KycSubmissionRequest;
 import com.shadhinpay.identity.dto.MerchantOnboardingDto;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
+import com.shadhinpay.identity.testsupport.TestSliceSecurityConfig;
 import com.shadhinpay.identity.usecase.GetMerchantProfileUseCase;
 import com.shadhinpay.identity.usecase.SubmitKycDocumentsUseCase;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(MerchantOnboardingController.class)
-@AutoConfigureMockMvc(addFilters = false)
+@WebMvcTest(MerchantOnboardingControllerImpl.class)
+@Import(TestSliceSecurityConfig.class)
 class MerchantOnboardingControllerTest {
 
   @Autowired private MockMvc mockMvc;
@@ -35,6 +38,7 @@ class MerchantOnboardingControllerTest {
   @MockitoBean private GetMerchantProfileUseCase getMerchantProfileUseCase;
 
   @Test
+  @WithMockUser
   void submitKyc_Success() throws Exception {
     UUID userId = UUID.randomUUID();
     KycSubmissionRequest request =
@@ -56,6 +60,7 @@ class MerchantOnboardingControllerTest {
   }
 
   @Test
+  @WithMockUser
   void getMe_Success() throws Exception {
     UUID userId = UUID.randomUUID();
     MerchantOnboardingDto dto =

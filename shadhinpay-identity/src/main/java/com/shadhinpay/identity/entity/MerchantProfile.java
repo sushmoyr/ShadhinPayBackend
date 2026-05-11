@@ -2,7 +2,7 @@ package com.shadhinpay.identity.entity;
 
 import com.shadhinpay.common.entity.Auditable;
 import com.shadhinpay.identity.entity.converter.KycDataConverter;
-import com.shadhinpay.identity.entity.enums.OnboardingStatus;
+import com.shadhinpay.identity.enums.OnboardingStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;

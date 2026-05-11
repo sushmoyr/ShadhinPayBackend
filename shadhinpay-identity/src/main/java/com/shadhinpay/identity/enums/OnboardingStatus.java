@@ -1,4 +1,4 @@
-package com.shadhinpay.identity.entity.enums;
+package com.shadhinpay.identity.enums;
 
 public enum OnboardingStatus {
   REGISTERED,
