@@ -8,8 +8,8 @@ import com.shadhinpay.adapters.port.VendorCredentials;
  *
  * <p>Looks up a valid token in Redis for {@code (vendor, credentials)}; on miss or expiry, calls
  * the vendor's auth endpoint, caches the result with a TTL matching vendor policy, and returns the
- * new token. Implementation lands in Phase 1 Wave C alongside the first real adapter; Wave A uses
- * {@link NoopTokenService}.
+ * new token. Wave A provides {@link RedisTokenService} (Redis-backed, double-checked distributed
+ * lock); Wave C vendor adapters consume this interface as-is.
  */
 public interface TokenService {
 

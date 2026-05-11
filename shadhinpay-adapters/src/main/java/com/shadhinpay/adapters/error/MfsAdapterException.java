@@ -14,9 +14,18 @@ import org.springframework.http.HttpStatus;
  * exception is reserved for misconfiguration / programmer errors that surface to the global {@code
  * GlobalExceptionHandler} as {@code 502 BAD_GATEWAY}.
  */
-public class MfsAdapterException extends ApiOperationException {
+public final class MfsAdapterException extends ApiOperationException {
 
   public MfsAdapterException(String message) {
     super(message, ErrorCode.MFS_ADAPTER_FAILURE, HttpStatus.BAD_GATEWAY);
+  }
+
+  public MfsAdapterException(ErrorCode code, String message) {
+    super(message, code, HttpStatus.BAD_GATEWAY);
+  }
+
+  public MfsAdapterException(ErrorCode code, String message, Throwable cause) {
+    super(message, code, HttpStatus.BAD_GATEWAY);
+    this.initCause(cause);
   }
 }
