@@ -237,6 +237,8 @@
         <artifactId>totp</artifactId>
         <version>1.7.1</version>
       </dependency>
+
+      <!-- spring-retry and spring-aspects are version-managed by the Spring Boot BOM. -->
     </dependencies>
   </dependencyManagement>
 
@@ -334,6 +336,10 @@
             <rulesets>
               <ruleset>${maven.multiModuleProjectDirectory}/config/pmd/ruleset.xml</ruleset>
             </rulesets>
+            <!-- MapStruct-generated implementations (target/generated-sources/annotations) -->
+            <excludeRoots>
+              <excludeRoot>${project.build.directory}/generated-sources/annotations</excludeRoot>
+            </excludeRoots>
           </configuration>
         </plugin>
 

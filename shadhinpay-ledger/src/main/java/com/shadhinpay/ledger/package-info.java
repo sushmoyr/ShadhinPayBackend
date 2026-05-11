@@ -1,4 +1,2 @@
-@org.springframework.modulith.ApplicationModule(
-    displayName = "Ledger",
-    allowedDependencies = {"common"})
+@org.springframework.modulith.ApplicationModule(displayName = "Ledger")
 package com.shadhinpay.ledger;
