@@ -3,9 +3,6 @@ package com.shadhinpay.adapters;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 
 import com.shadhinpay.adapters.port.Vendor;
 import com.shadhinpay.adapters.port.VendorCredentials;
@@ -14,59 +11,57 @@ import com.shadhinpay.adapters.support.RedisTokenService;
 import com.shadhinpay.adapters.support.VendorAuthClient;
 import com.shadhinpay.adapters.wiremock.VendorScenarios;
 import com.shadhinpay.adapters.wiremock.VendorWireMockExtension;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest(
     classes = {RedisTokenService.class, HttpClientFactory.class, MockTokenRefreshIT.Config.class})
+@ImportAutoConfiguration(RedisAutoConfiguration.class)
+@Testcontainers(disabledWithoutDocker = true)
+@DisabledIfSystemProperty(named = "skipDocker", matches = "true")
 class MockTokenRefreshIT {
 
   @RegisterExtension static VendorWireMockExtension wireMock = new VendorWireMockExtension();
 
-  @MockBean StringRedisTemplate redisTemplate;
+  @Container
+  static final GenericContainer<?> redis =
+      new GenericContainer<>(DockerImageName.parse("redis:7-alpine")).withExposedPorts(6379);
+
+  @DynamicPropertySource
+  static void redisProps(DynamicPropertyRegistry r) {
+    r.add("spring.data.redis.host", redis::getHost);
+    r.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
+  }
 
   @Autowired RedisTokenService tokenService;
+  @Autowired StringRedisTemplate redisTemplate;
 
   @BeforeEach
-  void setUpRedisMock() {
-    @SuppressWarnings("unchecked")
-    ValueOperations<String, String> valueOps = mock(ValueOperations.class);
-    lenient().when(redisTemplate.opsForValue()).thenReturn(valueOps);
-
-    ConcurrentHashMap<String, String> cache = new ConcurrentHashMap<>();
-
-    lenient().when(valueOps.get(any())).thenAnswer(inv -> cache.get((String) inv.getArgument(0)));
-    lenient()
-        .doAnswer(
-            inv -> {
-              cache.put((String) inv.getArgument(0), (String) inv.getArgument(1));
-              return null;
-            })
-        .when(valueOps)
-        .set(any(), any(), any());
-
-    // NX lock logic
-    lenient().when(valueOps.setIfAbsent(any(), any(), any())).thenReturn(true);
-    // Pretend key never expires for the `getIfValid` check, unless we want to force miss
-    // The getExpire returns -2 if key does not exist. We want a cache miss initially.
-    lenient().when(redisTemplate.getExpire(any())).thenReturn(-2L);
-    lenient().when(redisTemplate.delete(any(String.class))).thenReturn(true);
+  void flushRedis() {
+    redisTemplate.getConnectionFactory().getConnection().serverCommands().flushDb();
   }
 
   @TestConfiguration
@@ -74,32 +69,52 @@ class MockTokenRefreshIT {
     @Bean
     @Primary
     VendorAuthClient wireMockAuthClient(HttpClientFactory factory) {
-      return (v, creds) -> {
-        OkHttpClient client = factory.clientFor(v);
-        Request req =
-            new Request.Builder()
-                .url(wireMock.getBaseUrl() + "/mock/auth")
-                .post(RequestBody.create(new byte[0], null))
-                .build();
+      return new WireMockMockVendorAuthClient(factory, wireMock.getBaseUrl());
+    }
+  }
 
-        try {
-          Response res = client.newCall(req).execute();
-          if (res.code() == 401) {
-            // Retry once
-            res.close();
-            res = client.newCall(req).execute();
-          }
-          if (res.code() == 200) {
-            res.close();
-            return new VendorAuthClient.AuthToken(
-                "wiremock-token", Instant.now().plusSeconds(3600));
-          }
-          res.close();
-          throw new RuntimeException("Failed with " + res.code());
-        } catch (Exception e) {
-          throw new RuntimeException(e);
+  /**
+   * Test-only override of {@code MockVendorAuthClient} that hits the WireMock URL and retries once
+   * on a 401 response. Used to exercise the {@code unauthorizedThenSuccess} scenario end-to-end.
+   */
+  static class WireMockMockVendorAuthClient implements VendorAuthClient {
+
+    private final HttpClientFactory factory;
+    private final String baseUrl;
+
+    WireMockMockVendorAuthClient(HttpClientFactory factory, String baseUrl) {
+      this.factory = factory;
+      this.baseUrl = baseUrl;
+    }
+
+    @Override
+    public AuthToken authenticate(Vendor v, VendorCredentials creds) {
+      OkHttpClient client = factory.clientFor(v);
+      Request req =
+          new Request.Builder()
+              .url(baseUrl + "/mock/auth")
+              .post(RequestBody.create(new byte[0], null))
+              .build();
+
+      try (Response first = client.newCall(req).execute()) {
+        if (first.code() == 200) {
+          return new AuthToken("wiremock-token", Instant.now().plusSeconds(3600));
         }
-      };
+        if (first.code() != 401) {
+          throw new IllegalStateException("unexpected auth response: " + first.code());
+        }
+      } catch (IOException e) {
+        throw new IllegalStateException("auth call failed", e);
+      }
+
+      try (Response retry = client.newCall(req).execute()) {
+        if (retry.code() == 200) {
+          return new AuthToken("wiremock-token", Instant.now().plusSeconds(3600));
+        }
+        throw new IllegalStateException("auth retry failed with " + retry.code());
+      } catch (IOException e) {
+        throw new IllegalStateException("auth retry failed", e);
+      }
     }
   }
 

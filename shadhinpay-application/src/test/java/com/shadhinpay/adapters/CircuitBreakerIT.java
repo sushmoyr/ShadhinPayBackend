@@ -1,6 +1,7 @@
 package com.shadhinpay.adapters;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.shadhinpay.adapters.config.ResilienceConfig;
@@ -8,6 +9,7 @@ import com.shadhinpay.adapters.error.MfsAdapterException;
 import com.shadhinpay.adapters.port.Vendor;
 import com.shadhinpay.adapters.support.AdapterResilience;
 import com.shadhinpay.common.error.ErrorCode;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -39,6 +41,7 @@ class CircuitBreakerIT {
     }
 
     // 12th call short-circuits with VENDOR_DOWN
+    AtomicBoolean twelfthInvoked = new AtomicBoolean(false);
     MfsAdapterException thrown =
         assertThrows(
             MfsAdapterException.class,
@@ -46,11 +49,13 @@ class CircuitBreakerIT {
                 resilience.executeWithCircuitBreaker(
                     Vendor.MOCK,
                     () -> {
+                      twelfthInvoked.set(true);
                       throw new RuntimeException("should not execute");
                     }));
 
     assertEquals(ErrorCode.VENDOR_DOWN, thrown.getErrorCode());
     assertEquals("Circuit open for MOCK", thrown.getMessage());
+    assertFalse(twelfthInvoked.get(), "callable must not be invoked when circuit is open");
 
     // Wait waitDurationInOpenState (1 second)
     Thread.sleep(1100);

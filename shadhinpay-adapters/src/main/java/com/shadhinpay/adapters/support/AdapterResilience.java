@@ -22,12 +22,11 @@ public class AdapterResilience {
     CircuitBreaker circuitBreaker = registry.circuitBreaker(v.name());
     try {
       return circuitBreaker.executeCallable(call);
+    } catch (MfsAdapterException e) {
+      throw e;
     } catch (CallNotPermittedException e) {
-      throw new MfsAdapterException(ErrorCode.VENDOR_DOWN, "Circuit open for " + v);
+      throw new MfsAdapterException(ErrorCode.VENDOR_DOWN, "Circuit open for " + v, e);
     } catch (Exception e) {
-      if (e instanceof MfsAdapterException) {
-        throw (MfsAdapterException) e;
-      }
       throw new MfsAdapterException(ErrorCode.MFS_ADAPTER_FAILURE, e.getMessage(), e);
     }
   }

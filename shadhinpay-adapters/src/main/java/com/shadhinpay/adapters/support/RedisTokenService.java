@@ -3,6 +3,7 @@ package com.shadhinpay.adapters.support;
 import com.shadhinpay.adapters.error.MfsAdapterException;
 import com.shadhinpay.adapters.port.Vendor;
 import com.shadhinpay.adapters.port.VendorCredentials;
+import com.shadhinpay.common.error.ErrorCode;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -81,9 +82,7 @@ public class RedisTokenService implements TokenService {
           Thread.sleep(100);
         } catch (InterruptedException e) {
           Thread.currentThread().interrupt();
-          MfsAdapterException ex = new MfsAdapterException("Token fetch interrupted");
-          ex.initCause(e);
-          throw ex;
+          throw new MfsAdapterException(ErrorCode.VENDOR_DOWN, "Token fetch interrupted", e);
         }
         token = getIfValid(cacheKey);
         if (token != null) {
@@ -92,7 +91,7 @@ public class RedisTokenService implements TokenService {
       }
     }
 
-    throw new MfsAdapterException("Token fetch contention");
+    throw new MfsAdapterException(ErrorCode.VENDOR_DOWN, "Token fetch contention");
   }
 
   private String getIfValid(String cacheKey) {
@@ -110,7 +109,7 @@ public class RedisTokenService implements TokenService {
       Map<String, String> sortedCreds = new TreeMap<>(creds.values());
       StringBuilder sb = new StringBuilder();
       for (Map.Entry<String, String> entry : sortedCreds.entrySet()) {
-        sb.append(entry.getKey()).append("=").append(entry.getValue()).append(";");
+        sb.append(entry.getKey()).append('=').append(entry.getValue()).append(';');
       }
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hash = digest.digest(sb.toString().getBytes(StandardCharsets.UTF_8));

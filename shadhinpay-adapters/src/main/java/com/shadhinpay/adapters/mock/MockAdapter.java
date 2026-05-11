@@ -70,6 +70,11 @@ public class MockAdapter implements PaymentProvider {
     }
   }
 
+  /**
+   * Returns COMPLETED by default. {@code VendorRefundRequest} is a locked port type with no {@code
+   * metadata} field; to preserve a controllable fail path for downstream tests, the {@code
+   * mock_refund_outcome=fail} toggle is encoded into the {@code reason} string.
+   */
   @Override
   public VendorResponse refund(VendorRefundRequest request, VendorCredentials creds) {
     boolean isFail =
