@@ -29,6 +29,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -46,6 +47,10 @@ class EventPublicationIntegrationTest {
           .withUsername("test")
           .withPassword("test");
 
+  @Container
+  static final GenericContainer<?> redis =
+      new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
+
   @DynamicPropertySource
   static void overrides(DynamicPropertyRegistry r) {
     r.add("spring.datasource.url", postgres::getJdbcUrl);
@@ -54,11 +59,8 @@ class EventPublicationIntegrationTest {
     r.add("spring.flyway.enabled", () -> "true");
     r.add("spring.flyway.locations", () -> "classpath:db/migration");
     r.add("spring.jpa.hibernate.ddl-auto", () -> "validate");
-    r.add(
-        "spring.autoconfigure.exclude",
-        () ->
-            "org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration,"
-                + "org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration");
+    r.add("spring.data.redis.host", redis::getHost);
+    r.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
   }
 
   @Autowired StubPublisher publisher;
