@@ -41,7 +41,7 @@ public class RecordJournalEntryUseCaseImpl implements RecordJournalEntryUseCase 
   @Retryable(
       retryFor = ObjectOptimisticLockingFailureException.class,
       maxAttempts = 3,
-      backoff = @Backoff(delay = 100, multiplier = 2, random = true))
+      backoff = @Backoff(delay = 50, multiplier = 2))
   @Transactional
   public void execute(JournalEntryRequest request) {
     if (journalEntryRepository.existsBySourceTypeAndSourceId(
@@ -57,7 +57,8 @@ public class RecordJournalEntryUseCaseImpl implements RecordJournalEntryUseCase 
     for (PostingRequest p : request.postings()) {
       LedgerAccount account = resolveAccount(p.accountId(), request.sourceId());
 
-      // Convert request sign to absolute amount + DB sign convention
+      // Locked PostingRequest contract: amount sign aligns with type. Convert to the
+      // absolute amount + DB sign convention here so the entity stores positives only.
       Money absAmount = p.amount().isNegative() ? p.amount().negate() : p.amount();
       PostingType type =
           p.type() == PostingRequest.Type.DEBIT ? PostingType.DEBIT : PostingType.CREDIT;
@@ -80,12 +81,15 @@ public class RecordJournalEntryUseCaseImpl implements RecordJournalEntryUseCase 
     Money sum = Money.zero(DEFAULT_CURRENCY);
     try {
       for (PostingRequest p : request.postings()) {
-        // The amount is already signed (+ for debit, - for credit)
+        requireSignMatchesType(p);
         sum = sum.add(p.amount());
       }
     } catch (IllegalArgumentException e) {
-      throw new InvalidOperationStateException(
-          "Currency mismatch in journal postings: " + e.getMessage());
+      InvalidOperationStateException wrapped =
+          new InvalidOperationStateException(
+              "Currency mismatch in journal postings: " + e.getMessage());
+      wrapped.initCause(e);
+      throw wrapped;
     }
 
     if (!sum.isZero()) {
@@ -96,13 +100,26 @@ public class RecordJournalEntryUseCaseImpl implements RecordJournalEntryUseCase 
     }
   }
 
+  private static void requireSignMatchesType(PostingRequest p) {
+    boolean consistent =
+        (p.type() == PostingRequest.Type.DEBIT && !p.amount().isNegative())
+            || (p.type() == PostingRequest.Type.CREDIT && !p.amount().isPositive());
+    if (!consistent) {
+      throw new InvalidOperationStateException(
+          "Posting amount sign inconsistent with type: amount="
+              + p.amount().amount()
+              + " type="
+              + p.type());
+    }
+  }
+
   private LedgerAccount resolveAccount(UUID requestedAccountId, String sourceId) {
     Optional<LedgerAccount> optAccount = ledgerAccountRepository.findById(requestedAccountId);
 
     if (optAccount.isPresent()) {
       LedgerAccount acc = optAccount.get();
       if (SYSTEM_ACCOUNT_CODES.contains(acc.getCode())) {
-        int targetShardId = Math.abs(sourceId.hashCode()) % 10;
+        int targetShardId = LedgerShardSelector.selectShard(sourceId);
         if (acc.getShardId() != targetShardId) {
           return ledgerAccountRepository
               .findByOwnerIdAndCodeAndShardIdAndCurrency(

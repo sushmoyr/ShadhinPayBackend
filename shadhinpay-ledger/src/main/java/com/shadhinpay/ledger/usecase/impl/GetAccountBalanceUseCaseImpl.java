@@ -22,9 +22,16 @@ public class GetAccountBalanceUseCaseImpl implements GetAccountBalanceUseCase {
   private static final String DEFAULT_CURRENCY = "BDT";
 
   /**
-   * Returns the balance for the given account. Note on read-after-write: for sharded system
-   * accounts, summing the balances across shards may be eventually consistent during rapid updates,
-   * as updates land on different rows.
+   * Returns the balance for the given account.
+   *
+   * <p><b>Convention:</b> {@code ownerId} must be {@code null} when {@code accountCode} is one of
+   * the sharded system accounts ({@code ESCROW}, {@code PLATFORM_REVENUE}, {@code VENDOR_PAYABLE});
+   * for those, the impl aggregates {@code SUM(balance)} across all 10 shards. For per-merchant
+   * codes (e.g. {@code MERCHANT_PAYABLE}) {@code ownerId} is the merchant id. The locked Javadoc on
+   * the interface predates the system-account split — treat this comment as authoritative.
+   *
+   * <p>Read-after-write caveat: for sharded system accounts, the SUM may lag during rapid updates
+   * because writes land on different rows.
    */
   @Override
   @Transactional(readOnly = true)

@@ -14,34 +14,18 @@ import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-@SpringBootTest(properties = {
-    "spring.datasource.url=jdbc:h2:mem:ledger_e2e;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.flyway.enabled=false",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.defer-datasource-initialization=true",
-    "spring.modulith.events.jdbc.schema-initialization.enabled=true",
-    "spring.sql.init.mode=always",
-    "spring.sql.init.data-locations=classpath:ledger-test-seed.sql",
-    "shadhinpay.auth.token-secret=test-secret-test-secret-test-secret-test-secret",
-    "shadhinpay.auth.token-expiration-ms=3600000",
-    "REDIS_HOST=localhost",
-    "REDIS_PASSWORD="
-})
-@ActiveProfiles("test")
-public class LedgerEndToEndIT {
+class LedgerEndToEndIT extends AbstractLedgerIntegrationTest {
 
-  @org.springframework.boot.test.context.TestConfiguration
+  @TestConfiguration
   static class TestConfig {
-    @org.springframework.context.annotation.Bean
-    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
-      return org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance();
+    @Bean
+    PasswordEncoder passwordEncoder() {
+      return NoOpPasswordEncoder.getInstance();
     }
   }
 
@@ -50,7 +34,7 @@ public class LedgerEndToEndIT {
   @Autowired private LedgerAccountRepository accountRepository;
 
   @Test
-  void testEndToEndRecord() {
+  void recordJournal_balancesAllThreeAccounts() {
     UUID merchantId = UUID.randomUUID();
     LedgerAccount escrowShard0 = accountRepository.findByCodeAndCurrency("ESCROW", "BDT").get(0);
     LedgerAccount revenueShard0 =
@@ -60,7 +44,7 @@ public class LedgerEndToEndIT {
         new JournalEntryRequest(
             "PAYMENT",
             UUID.randomUUID().toString(),
-            "Test Txn",
+            "End-to-end test",
             List.of(
                 new PostingRequest(
                     escrowShard0.getId(), Money.of(100, "BDT"), PostingRequest.Type.DEBIT),
@@ -75,14 +59,14 @@ public class LedgerEndToEndIT {
     assertThat(merchantBalance.amount()).isEqualByComparingTo("99");
 
     Money escrowBalance = getBalanceUseCase.execute(null, "ESCROW");
-    assertThat(escrowBalance.isPositive()).isTrue();
+    assertThat(escrowBalance.amount()).isEqualByComparingTo("100");
 
     Money revenueBalance = getBalanceUseCase.execute(null, "PLATFORM_REVENUE");
-    assertThat(revenueBalance.isPositive()).isTrue();
+    assertThat(revenueBalance.amount()).isEqualByComparingTo("1");
   }
 
   @Test
-  void testShardedBalance() {
+  void shardedSystemBalance_aggregatesAcrossShards() {
     for (int i = 0; i < 100; i++) {
       String txnId = UUID.randomUUID().toString();
       LedgerAccount escrowLogic = accountRepository.findByCodeAndCurrency("ESCROW", "BDT").get(0);
@@ -93,7 +77,7 @@ public class LedgerEndToEndIT {
           new JournalEntryRequest(
               "FEE",
               txnId,
-              "Fee",
+              "Fee " + i,
               List.of(
                   new PostingRequest(
                       escrowLogic.getId(), Money.of(10, "BDT"), PostingRequest.Type.DEBIT),
@@ -104,7 +88,7 @@ public class LedgerEndToEndIT {
     }
 
     Money escrowTotal = getBalanceUseCase.execute(null, "ESCROW");
-    assertThat(escrowTotal.isPositive()).isTrue();
+    assertThat(escrowTotal.amount()).isEqualByComparingTo("1000");
 
     long activeShards =
         accountRepository.findByCodeAndCurrency("ESCROW", "BDT").stream()

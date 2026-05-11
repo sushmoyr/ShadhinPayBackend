@@ -10,18 +10,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.shadhinpay.common.error.ResourceNotFoundException;
 import com.shadhinpay.common.money.Money;
 import com.shadhinpay.common.security.AuthenticatedPrincipal;
-import com.shadhinpay.ledger.dto.BalanceDto;
 import com.shadhinpay.ledger.dto.JournalEntryDto;
-import com.shadhinpay.ledger.entity.LedgerAccount;
-import com.shadhinpay.ledger.entity.LedgerAccountType;
-import com.shadhinpay.ledger.mapper.LedgerMapper;
-import com.shadhinpay.ledger.repository.LedgerAccountRepository;
+import com.shadhinpay.ledger.usecase.GetAccountBalanceUseCase;
 import com.shadhinpay.ledger.usecase.internal.ListJournalEntriesUseCase;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,18 +43,21 @@ class MerchantLedgerControllerImplTest {
   static class TestConfig {
     @Bean
     public MerchantLedgerControllerImpl merchantLedgerController(
-        LedgerAccountRepository accountRepository,
-        ListJournalEntriesUseCase listJournalEntriesUseCase,
-        LedgerMapper mapper) {
-      return new MerchantLedgerControllerImpl(accountRepository, listJournalEntriesUseCase, mapper);
+        GetAccountBalanceUseCase getAccountBalanceUseCase,
+        ListJournalEntriesUseCase listJournalEntriesUseCase) {
+      return new MerchantLedgerControllerImpl(getAccountBalanceUseCase, listJournalEntriesUseCase);
+    }
+
+    @Bean
+    public com.shadhinpay.common.handler.GlobalExceptionHandler globalExceptionHandler() {
+      return new com.shadhinpay.common.handler.GlobalExceptionHandler();
     }
   }
 
   @Autowired private MockMvc mockMvc;
 
-  @MockBean private LedgerAccountRepository accountRepository;
+  @MockBean private GetAccountBalanceUseCase getAccountBalanceUseCase;
   @MockBean private ListJournalEntriesUseCase listJournalEntriesUseCase;
-  @MockBean private LedgerMapper mapper;
 
   private static final UUID MERCHANT_ID = UUID.fromString("11111111-1111-1111-1111-111111111111");
 
@@ -75,19 +74,9 @@ class MerchantLedgerControllerImplTest {
   }
 
   @Test
-  void shouldReturnMerchantBalance() throws Exception {
-    UUID accountId = UUID.randomUUID();
-    LedgerAccount account =
-        new LedgerAccount(MERCHANT_ID, LedgerAccountType.LIABILITY, "MERCHANT_PAYABLE", 0, "BDT");
-    org.springframework.test.util.ReflectionTestUtils.setField(account, "id", accountId);
-    org.springframework.test.util.ReflectionTestUtils.setField(
-        account, "balance", Money.of(500, "BDT"));
-
-    when(accountRepository.findByOwnerIdAndCodeAndShardIdAndCurrency(
-            MERCHANT_ID, "MERCHANT_PAYABLE", 0, "BDT"))
-        .thenReturn(Optional.of(account));
-    when(mapper.toBalanceDto(account))
-        .thenReturn(new BalanceDto(accountId, "MERCHANT_PAYABLE", "LIABILITY", "BDT", "500.0000"));
+  void getBalance_returnsMerchantBalanceFromUseCase() throws Exception {
+    when(getAccountBalanceUseCase.execute(MERCHANT_ID, "MERCHANT_PAYABLE"))
+        .thenReturn(Money.of(500, "BDT"));
 
     mockMvc
         .perform(
@@ -103,18 +92,25 @@ class MerchantLedgerControllerImplTest {
   }
 
   @Test
-  void shouldReturn401WhenNotAuthenticated() throws Exception {
+  void getBalance_returns404WhenUseCaseThrowsResourceNotFound() throws Exception {
+    when(getAccountBalanceUseCase.execute(MERCHANT_ID, "MERCHANT_PAYABLE"))
+        .thenThrow(new ResourceNotFoundException("Merchant account", MERCHANT_ID));
+
     mockMvc
-        .perform(
-            get("/api/v1/merchant/balance")
-                .param("code", "MERCHANT_PAYABLE")
-                .param("currency", "BDT")
-                .with(csrf()))
+        .perform(get("/api/v1/merchant/balance").with(authentication(merchantAuth())).with(csrf()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.meta.errorCode").value("RESOURCE_NOT_FOUND"));
+  }
+
+  @Test
+  void getBalance_unauthenticatedReturns401() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/merchant/balance").with(csrf()))
         .andExpect(status().isUnauthorized());
   }
 
   @Test
-  void shouldReturnJournalEntries() throws Exception {
+  void listJournal_returnsCallerScopedEntries() throws Exception {
     PageImpl<JournalEntryDto> page =
         new PageImpl<>(
             List.of(
@@ -144,7 +140,7 @@ class MerchantLedgerControllerImplTest {
   }
 
   @Test
-  void merchantCannotPassMerchantIdParam() throws Exception {
+  void listJournal_ignoresForgedMerchantIdParam() throws Exception {
     when(listJournalEntriesUseCase.execute(any(), eq(null), eq(null), eq(null), eq(MERCHANT_ID)))
         .thenReturn(new PageImpl<>(List.of()));
 
@@ -152,8 +148,6 @@ class MerchantLedgerControllerImplTest {
         .perform(
             get("/api/v1/merchant/journal")
                 .param("merchantId", UUID.randomUUID().toString())
-                .param("page", "0")
-                .param("size", "20")
                 .with(authentication(merchantAuth()))
                 .with(csrf()))
         .andExpect(status().isOk());

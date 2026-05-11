@@ -20,34 +20,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-@SpringBootTest(properties = {
-    "spring.datasource.url=jdbc:h2:mem:ledger_concurrency;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
-    "spring.datasource.driver-class-name=org.h2.Driver",
-    "spring.datasource.username=sa",
-    "spring.datasource.password=",
-    "spring.flyway.enabled=false",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.defer-datasource-initialization=true",
-    "spring.modulith.events.jdbc.schema-initialization.enabled=true",
-    "spring.sql.init.mode=always",
-    "spring.sql.init.data-locations=classpath:ledger-test-seed.sql",
-    "shadhinpay.auth.token-secret=test-secret-test-secret-test-secret-test-secret",
-    "shadhinpay.auth.token-expiration-ms=3600000",
-    "REDIS_HOST=localhost",
-    "REDIS_PASSWORD="
-})
-@ActiveProfiles("test")
-public class LedgerConcurrencyIT {
+class LedgerConcurrencyIT extends AbstractLedgerIntegrationTest {
 
-  @org.springframework.boot.test.context.TestConfiguration
+  @TestConfiguration
   static class TestConfig {
-    @org.springframework.context.annotation.Bean
-    public org.springframework.security.crypto.password.PasswordEncoder passwordEncoder() {
-      return org.springframework.security.crypto.password.NoOpPasswordEncoder.getInstance();
+    @Bean
+    PasswordEncoder passwordEncoder() {
+      return NoOpPasswordEncoder.getInstance();
     }
   }
 
@@ -56,17 +40,18 @@ public class LedgerConcurrencyIT {
   @Autowired private LedgerAccountRepository accountRepository;
 
   @Test
-  void testConcurrentJournalEntriesOnSameMerchant() throws InterruptedException {
+  void hundredConcurrentJournalsAgainstSameMerchantAccount_settleWithRetries() throws Exception {
     int threadCount = 100;
+    int poolSize = 20;
     CountDownLatch startLatch = new CountDownLatch(1);
     CountDownLatch endLatch = new CountDownLatch(threadCount);
-    // Note: Pool size 1 is used here because H2 in-memory DB with Hibernate @Version 
-    // reaches its contention limit quickly on a single row under extreme simultaneous load.
-    // Logic correctness is still verified by 100 sequential entries.
-    ExecutorService executor = Executors.newFixedThreadPool(1);
+    ExecutorService executor = Executors.newFixedThreadPool(poolSize);
 
     UUID merchantId = UUID.randomUUID();
-    LedgerAccount merchantAcc = accountRepository.save(new LedgerAccount(merchantId, LedgerAccountType.LIABILITY, "MERCHANT_PAYABLE", 0, "BDT"));
+    LedgerAccount merchantAcc =
+        accountRepository.save(
+            new LedgerAccount(
+                merchantId, LedgerAccountType.LIABILITY, "MERCHANT_PAYABLE", 0, "BDT"));
 
     LedgerAccount escrowLogic = accountRepository.findByCodeAndCurrency("ESCROW", "BDT").get(0);
     LedgerAccount revenueLogic =
@@ -79,24 +64,26 @@ public class LedgerConcurrencyIT {
       executor.submit(
           () -> {
             try {
-              startLatch.await(); // wait until all threads are ready
-
+              startLatch.await();
               JournalEntryRequest req =
                   new JournalEntryRequest(
                       "PAYMENT",
-                      UUID.randomUUID().toString(), // unique per thread
-                      "Concurrent Test " + idx,
+                      UUID.randomUUID().toString(),
+                      "Concurrent " + idx,
                       List.of(
                           new PostingRequest(
                               escrowLogic.getId(), Money.of(100, "BDT"), PostingRequest.Type.DEBIT),
                           new PostingRequest(
-                              merchantAcc.getId(), Money.of(-98, "BDT"), PostingRequest.Type.CREDIT),
+                              merchantAcc.getId(),
+                              Money.of(-98, "BDT"),
+                              PostingRequest.Type.CREDIT),
                           new PostingRequest(
-                              revenueLogic.getId(), Money.of(-2, "BDT"), PostingRequest.Type.CREDIT)),
+                              revenueLogic.getId(),
+                              Money.of(-2, "BDT"),
+                              PostingRequest.Type.CREDIT)),
                       Instant.now());
               recordUseCase.execute(req);
             } catch (Exception e) {
-              e.printStackTrace();
               errorCount.incrementAndGet();
             } finally {
               endLatch.countDown();
@@ -104,14 +91,17 @@ public class LedgerConcurrencyIT {
           });
     }
 
-    startLatch.countDown(); // Let them rip
-    endLatch.await(30, TimeUnit.SECONDS);
+    startLatch.countDown();
+    boolean finished = endLatch.await(60, TimeUnit.SECONDS);
+    executor.shutdown();
+    assertThat(executor.awaitTermination(5, TimeUnit.SECONDS)).isTrue();
 
-    assertThat(errorCount.get()).isEqualTo(0);
+    assertThat(finished).as("all 100 tasks completed within 60s").isTrue();
+    assertThat(errorCount.get()).as("retries absorbed every optimistic-lock collision").isZero();
 
     Money merchantBalance = getBalanceUseCase.execute(merchantId, "MERCHANT_PAYABLE");
-    assertThat(merchantBalance.amount()).isEqualByComparingTo("9800");
-
-    executor.shutdown();
+    assertThat(merchantBalance.amount())
+        .as("final balance equals 100 × 98 BDT, regardless of retry path")
+        .isEqualByComparingTo("9800");
   }
 }

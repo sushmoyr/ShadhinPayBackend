@@ -46,10 +46,10 @@ public class LedgerAccount extends Auditable {
   private String code;
 
   @Column(name = "shard_id", nullable = false)
-  private int shardId = 0;
+  private int shardId;
 
   @Column(name = "currency", nullable = false, length = 3)
-  private String currency = "BDT";
+  private String currency;
 
   @Convert(converter = MoneyConverter.class)
   @Column(name = "balance", nullable = false, precision = 19, scale = 4)
@@ -57,7 +57,7 @@ public class LedgerAccount extends Auditable {
 
   @Version
   @Column(name = "version", nullable = false)
-  private long version = 0L;
+  private long version;
 
   public LedgerAccount(
       UUID ownerId, LedgerAccountType type, String code, int shardId, String currency) {

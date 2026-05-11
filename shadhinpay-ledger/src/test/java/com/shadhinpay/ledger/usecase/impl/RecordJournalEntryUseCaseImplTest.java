@@ -17,7 +17,6 @@ import com.shadhinpay.ledger.usecase.PostingRequest;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import net.jqwik.api.Property;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,7 +33,7 @@ class RecordJournalEntryUseCaseImplTest {
   @InjectMocks private RecordJournalEntryUseCaseImpl useCase;
 
   @Test
-  void testIdempotency() {
+  void execute_idempotent_returnsSilentlyOnDuplicateSource() {
     when(journalEntryRepository.existsBySourceTypeAndSourceId("PAYMENT", "123")).thenReturn(true);
 
     JournalEntryRequest req =
@@ -55,7 +54,7 @@ class RecordJournalEntryUseCaseImplTest {
   }
 
   @Test
-  void testValidationThrowsOnNonZeroSum() {
+  void execute_rejectsNonZeroSum() {
     when(journalEntryRepository.existsBySourceTypeAndSourceId("PAYMENT", "123")).thenReturn(false);
 
     JournalEntryRequest req =
@@ -78,7 +77,7 @@ class RecordJournalEntryUseCaseImplTest {
   }
 
   @Test
-  void testValidationThrowsOnCurrencyMismatch() {
+  void execute_rejectsCurrencyMismatch() {
     when(journalEntryRepository.existsBySourceTypeAndSourceId("PAYMENT", "123")).thenReturn(false);
 
     JournalEntryRequest req =
@@ -100,14 +99,58 @@ class RecordJournalEntryUseCaseImplTest {
     verify(journalEntryRepository, never()).save(any());
   }
 
-  @Property(tries = 1)
-  void shardSelectorChiSquareTest() {
+  @Test
+  void execute_rejectsPositiveAmountTaggedAsCredit() {
+    when(journalEntryRepository.existsBySourceTypeAndSourceId("PAYMENT", "S1")).thenReturn(false);
+
+    JournalEntryRequest req =
+        new JournalEntryRequest(
+            "PAYMENT",
+            "S1",
+            "Inconsistent sign",
+            List.of(
+                new PostingRequest(
+                    UUID.randomUUID(), Money.of(100, "BDT"), PostingRequest.Type.DEBIT),
+                new PostingRequest(
+                    UUID.randomUUID(), Money.of(100, "BDT"), PostingRequest.Type.CREDIT)),
+            Instant.now());
+
+    assertThatThrownBy(() -> useCase.execute(req))
+        .isInstanceOf(InvalidOperationStateException.class)
+        .hasMessageContaining("inconsistent with type");
+
+    verify(journalEntryRepository, never()).save(any());
+  }
+
+  @Test
+  void execute_rejectsNegativeAmountTaggedAsDebit() {
+    when(journalEntryRepository.existsBySourceTypeAndSourceId("PAYMENT", "S2")).thenReturn(false);
+
+    JournalEntryRequest req =
+        new JournalEntryRequest(
+            "PAYMENT",
+            "S2",
+            "Inconsistent sign",
+            List.of(
+                new PostingRequest(
+                    UUID.randomUUID(), Money.of(-100, "BDT"), PostingRequest.Type.DEBIT),
+                new PostingRequest(
+                    UUID.randomUUID(), Money.of(-100, "BDT"), PostingRequest.Type.CREDIT)),
+            Instant.now());
+
+    assertThatThrownBy(() -> useCase.execute(req))
+        .isInstanceOf(InvalidOperationStateException.class)
+        .hasMessageContaining("inconsistent with type");
+  }
+
+  @Test
+  void ledgerShardSelector_distributesUniformlyAcrossTenShards() {
     int[] shardCounts = new int[10];
-    int n = 10000;
+    int n = 10_000;
 
     for (int i = 0; i < n; i++) {
-      String sourceId = UUID.randomUUID().toString();
-      int shardId = Math.abs(sourceId.hashCode()) % 10;
+      int shardId = LedgerShardSelector.selectShard(UUID.randomUUID().toString());
+      assertThat(shardId).isBetween(0, 9);
       shardCounts[shardId]++;
     }
 
@@ -117,7 +160,21 @@ class RecordJournalEntryUseCaseImplTest {
       chiSquare += Math.pow(count - expected, 2) / expected;
     }
 
-    // For 9 degrees of freedom, critical value at 99% confidence is 21.67
+    // 9 dof, 99% confidence — critical value 21.67
     assertThat(chiSquare).isLessThan(21.67);
+  }
+
+  @Test
+  void ledgerShardSelector_neverReturnsNegativeEvenForNegativeHashCodes() {
+    // Sample many strings whose hashCode is < 0 (Math.abs trap would map MIN_VALUE→negative).
+    int sampled = 0;
+    for (int i = 0; sampled < 100 && i < 100_000; i++) {
+      String s = "shard-" + i;
+      if (s.hashCode() < 0) {
+        assertThat(LedgerShardSelector.selectShard(s)).isBetween(0, 9);
+        sampled++;
+      }
+    }
+    assertThat(sampled).as("collected at least 100 negative-hash inputs").isGreaterThan(0);
   }
 }

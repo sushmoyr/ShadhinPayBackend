@@ -15,6 +15,7 @@ public interface JournalEntryRepository
     extends JpaRepository<JournalEntry, UUID>, JpaSpecificationExecutor<JournalEntry> {
   boolean existsBySourceTypeAndSourceId(String sourceType, String sourceId);
 
+  @Override
   @EntityGraph(attributePaths = {"postings", "postings.account"})
   Page<JournalEntry> findAll(Specification<JournalEntry> spec, Pageable pageable);
 }

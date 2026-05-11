@@ -8,15 +8,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.shadhinpay.common.error.ResourceNotFoundException;
 import com.shadhinpay.common.money.Money;
 import com.shadhinpay.common.security.AuthenticatedPrincipal;
 import com.shadhinpay.ledger.dto.AccountIntegrityRecord;
 import com.shadhinpay.ledger.dto.JournalEntryDto;
 import com.shadhinpay.ledger.dto.TrialBalanceReportDto;
-import com.shadhinpay.ledger.entity.LedgerAccount;
-import com.shadhinpay.ledger.entity.LedgerAccountType;
-import com.shadhinpay.ledger.mapper.LedgerMapper;
-import com.shadhinpay.ledger.repository.LedgerAccountRepository;
+import com.shadhinpay.ledger.usecase.GetAccountBalanceUseCase;
 import com.shadhinpay.ledger.usecase.internal.ListJournalEntriesUseCase;
 import com.shadhinpay.ledger.usecase.internal.VerifyTrialBalanceUseCase;
 import java.time.Instant;
@@ -48,10 +46,14 @@ class AdminLedgerControllerImplTest {
     public AdminLedgerControllerImpl adminLedgerController(
         ListJournalEntriesUseCase listJournalEntriesUseCase,
         VerifyTrialBalanceUseCase verifyTrialBalanceUseCase,
-        LedgerAccountRepository accountRepository,
-        LedgerMapper mapper) {
+        GetAccountBalanceUseCase getAccountBalanceUseCase) {
       return new AdminLedgerControllerImpl(
-          listJournalEntriesUseCase, verifyTrialBalanceUseCase, accountRepository, mapper);
+          listJournalEntriesUseCase, verifyTrialBalanceUseCase, getAccountBalanceUseCase);
+    }
+
+    @Bean
+    public com.shadhinpay.common.handler.GlobalExceptionHandler globalExceptionHandler() {
+      return new com.shadhinpay.common.handler.GlobalExceptionHandler();
     }
   }
 
@@ -59,8 +61,7 @@ class AdminLedgerControllerImplTest {
 
   @MockBean private ListJournalEntriesUseCase listJournalEntriesUseCase;
   @MockBean private VerifyTrialBalanceUseCase verifyTrialBalanceUseCase;
-  @MockBean private LedgerAccountRepository accountRepository;
-  @MockBean private LedgerMapper mapper;
+  @MockBean private GetAccountBalanceUseCase getAccountBalanceUseCase;
 
   private UsernamePasswordAuthenticationToken adminViewerAuth() {
     AuthenticatedPrincipal principal =
@@ -91,7 +92,7 @@ class AdminLedgerControllerImplTest {
   }
 
   @Test
-  void shouldReturnJournalEntriesWithFilters() throws Exception {
+  void listJournal_returnsFilteredEntries() throws Exception {
     when(listJournalEntriesUseCase.execute(any(), any(), any(), any(), any()))
         .thenReturn(
             new PageImpl<>(
@@ -120,17 +121,8 @@ class AdminLedgerControllerImplTest {
   }
 
   @Test
-  void shouldReturnAggregatedBalance() throws Exception {
-    LedgerAccount shard0 = new LedgerAccount(null, LedgerAccountType.CLEARING, "ESCROW", 0, "BDT");
-    org.springframework.test.util.ReflectionTestUtils.setField(
-        shard0, "balance", Money.of(100, "BDT"));
-
-    LedgerAccount shard1 = new LedgerAccount(null, LedgerAccountType.CLEARING, "ESCROW", 1, "BDT");
-    org.springframework.test.util.ReflectionTestUtils.setField(
-        shard1, "balance", Money.of(200, "BDT"));
-
-    when(accountRepository.findByCodeAndCurrency("ESCROW", "BDT"))
-        .thenReturn(List.of(shard0, shard1));
+  void getBalance_returnsAggregatedSystemBalance() throws Exception {
+    when(getAccountBalanceUseCase.execute(null, "ESCROW")).thenReturn(Money.of(300, "BDT"));
 
     mockMvc
         .perform(
@@ -140,11 +132,27 @@ class AdminLedgerControllerImplTest {
                 .with(csrf()))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.amount").value("300.0000"))
-        .andExpect(jsonPath("$.data.accountCode").value("ESCROW"));
+        .andExpect(jsonPath("$.data.accountCode").value("ESCROW"))
+        .andExpect(jsonPath("$.data.accountType").value("CLEARING"));
   }
 
   @Test
-  void shouldReturnTrialBalanceWithManagerRole() throws Exception {
+  void getBalance_returns404WhenUseCaseThrowsResourceNotFound() throws Exception {
+    when(getAccountBalanceUseCase.execute(null, "UNKNOWN"))
+        .thenThrow(new ResourceNotFoundException("System account", "UNKNOWN"));
+
+    mockMvc
+        .perform(
+            get("/api/v1/admin/ledger/balance/UNKNOWN")
+                .param("currency", "BDT")
+                .with(authentication(adminViewerAuth()))
+                .with(csrf()))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.meta.errorCode").value("RESOURCE_NOT_FOUND"));
+  }
+
+  @Test
+  void trialBalance_managerSeesCleanReport() throws Exception {
     TrialBalanceReportDto cleanReport = new TrialBalanceReportDto(true, List.of(), Instant.now());
     when(verifyTrialBalanceUseCase.execute()).thenReturn(cleanReport);
 
@@ -159,7 +167,7 @@ class AdminLedgerControllerImplTest {
   }
 
   @Test
-  void shouldReturnTrialBalanceWithMismatches() throws Exception {
+  void trialBalance_managerSeesMismatches() throws Exception {
     AccountIntegrityRecord mismatch =
         new AccountIntegrityRecord(
             UUID.randomUUID(), "ESCROW", null, "100.0000", "90.0000", "-10.0000");
@@ -179,25 +187,12 @@ class AdminLedgerControllerImplTest {
   }
 
   @Test
-  void shouldRejectTrialBalanceWithoutManagerRole() throws Exception {
+  void trialBalance_viewerRoleRejected() throws Exception {
     mockMvc
         .perform(
             get("/api/v1/admin/ledger/trial-balance")
                 .with(authentication(adminViewerAuth()))
                 .with(csrf()))
         .andExpect(status().isForbidden());
-  }
-
-  @Test
-  void shouldReturn404ForUnknownAccountBalance() throws Exception {
-    when(accountRepository.findByCodeAndCurrency("UNKNOWN", "BDT")).thenReturn(List.of());
-
-    mockMvc
-        .perform(
-            get("/api/v1/admin/ledger/balance/UNKNOWN")
-                .param("currency", "BDT")
-                .with(authentication(adminViewerAuth()))
-                .with(csrf()))
-        .andExpect(status().isNotFound());
   }
 }

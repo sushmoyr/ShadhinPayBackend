@@ -38,25 +38,6 @@ class LedgerMapperTest {
   @Autowired private LedgerMapper mapper;
 
   @Test
-  void shouldMapBalanceDtoFromAccount() {
-    UUID accountId = UUID.randomUUID();
-    LedgerAccount account =
-        new LedgerAccount(
-            UUID.randomUUID(), LedgerAccountType.LIABILITY, "MERCHANT_PAYABLE", 0, "BDT");
-    org.springframework.test.util.ReflectionTestUtils.setField(account, "id", accountId);
-    org.springframework.test.util.ReflectionTestUtils.setField(
-        account, "balance", Money.of(500, "BDT"));
-
-    BalanceDto dto = mapper.toBalanceDto(account);
-
-    assertThat(dto.accountId()).isEqualTo(accountId);
-    assertThat(dto.accountCode()).isEqualTo("MERCHANT_PAYABLE");
-    assertThat(dto.accountType()).isEqualTo("LIABILITY");
-    assertThat(dto.currency()).isEqualTo("BDT");
-    assertThat(dto.amount()).isEqualTo("500.0000");
-  }
-
-  @Test
   void shouldMapPostingDto() {
     UUID accountId = UUID.randomUUID();
     LedgerAccount account =

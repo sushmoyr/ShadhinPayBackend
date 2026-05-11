@@ -1,6 +1,7 @@
 package com.shadhinpay.ledger.listener;
 
 import com.shadhinpay.common.money.Money;
+import com.shadhinpay.ledger.entity.JournalSourceType;
 import com.shadhinpay.ledger.entity.LedgerAccount;
 import com.shadhinpay.ledger.repository.LedgerAccountRepository;
 import com.shadhinpay.ledger.usecase.JournalEntryRequest;
@@ -35,7 +36,7 @@ public class PaymentCompletedEventListener {
 
       JournalEntryRequest request =
           new JournalEntryRequest(
-              "PAYMENT",
+              JournalSourceType.PAYMENT.name(),
               event.transactionId().toString(),
               "Payment captured: " + event.merchantOrderReference(),
               List.of(

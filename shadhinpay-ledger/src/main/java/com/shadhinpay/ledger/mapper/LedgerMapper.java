@@ -1,10 +1,8 @@
 package com.shadhinpay.ledger.mapper;
 
-import com.shadhinpay.ledger.dto.BalanceDto;
 import com.shadhinpay.ledger.dto.JournalEntryDto;
 import com.shadhinpay.ledger.dto.PostingDto;
 import com.shadhinpay.ledger.entity.JournalEntry;
-import com.shadhinpay.ledger.entity.LedgerAccount;
 import com.shadhinpay.ledger.entity.Posting;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -21,11 +19,4 @@ public interface LedgerMapper {
   @Mapping(target = "type", expression = "java(posting.getType().name())")
   @Mapping(target = "currency", source = "currency")
   PostingDto toPostingDto(Posting posting);
-
-  @Mapping(target = "accountId", source = "id")
-  @Mapping(target = "accountCode", source = "code")
-  @Mapping(target = "accountType", expression = "java(account.getType().name())")
-  @Mapping(target = "currency", source = "currency")
-  @Mapping(target = "amount", expression = "java(account.getBalance().amount().toPlainString())")
-  BalanceDto toBalanceDto(LedgerAccount account);
 }
