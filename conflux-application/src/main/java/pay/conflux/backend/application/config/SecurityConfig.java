@@ -42,6 +42,8 @@ public class SecurityConfig {
             auth ->
                 auth.requestMatchers(
                         new AntPathRequestMatcher("/api/v1/payments/callback/**"),
+                        new AntPathRequestMatcher("/api/v1/auth/login"),
+                        new AntPathRequestMatcher("/api/v1/merchant/register"),
                         new AntPathRequestMatcher("/actuator/health"),
                         new AntPathRequestMatcher("/actuator/health/**"),
                         new AntPathRequestMatcher("/v3/api-docs"),
