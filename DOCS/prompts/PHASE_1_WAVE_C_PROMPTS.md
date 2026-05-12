@@ -1,0 +1,137 @@
+# ConfluxPay — Phase 1 Wave C Agent Prompts (index)
+
+> **How to use this file:** Same shape as the Wave A / Wave B indexes. Each Wave C agent reads the cross-cutting decisions below and runs its module file under `wave-c/` in its own git worktree on its own feature branch. **Wave C is *partially* parallel:** one short sequential pre-prompt (`0` — `Vendor` enum extension) lands on `main` first; the two adapter sub-prompts (`10` Bkash, `11` SSLCommerz) then run in parallel; the acceptance gate (`12`) runs once both adapter branches merge.
+>
+> **Why a pre-prompt:** `SSLCOMMERZ` is not in the `Vendor` enum that Wave A locked. The enum is a Wave A "locked contract" — anything that touches it has to come through a cross-cutting decision rather than a per-vendor agent unilaterally editing it. Sub-prompt `0` is that decision, written as a runnable prompt so the orchestrator can ship it cleanly in one commit before the parallel adapter work starts. If both adapter agents tried to add `SSLCOMMERZ` themselves, they would conflict on `Vendor.java`, the V1012 CHECK constraint, and the resilience registry seeding.
+>
+> **Precedent for future waves:** any extension of a Wave-A/B locked enum or CHECK constraint — including the `Vendor` enum, `ErrorCode` enum, `VendorStatus` enum, or any `CHECK` constraint named in a prior migration — requires a dedicated pre-prompt at the start of the wave, run sequentially before any parallel work. Never let a per-agent prompt edit a locked enum, even if the change looks trivial; the merge-train conflict cost is asymmetric.
+>
+> **Prerequisite:** Wave B is complete and `main` is at the merge commit of `phase-1/payment-core` (or later). `mvn -pl conflux-application -am verify` is green on `main`. The Wave A + Wave B locked contracts in `PHASE_1_WAVE_A_REPORT.md` and `PHASE_1_WAVE_B_REPORT.md` are read-only — Wave C agents that need to touch them stop and ask.
+
+---
+
+## Wave C modules (one file per branch)
+
+| Sub-prompt                | Branch                                   | File                                                       | Order      |
+| ------------------------- | ---------------------------------------- | ---------------------------------------------------------- | ---------- |
+| `0` — Vendor enum + V1016 | `phase-1/wave-c-vendor-enum`             | [`wave-c/0-vendor-enum.md`](wave-c/0-vendor-enum.md)       | sequential |
+| `10` — BkashAdapter       | `phase-1/adapter-bkash`                  | [`wave-c/bkash.md`](wave-c/bkash.md)                       | parallel   |
+| `11` — SSLCommerzAdapter  | `phase-1/adapter-sslcommerz`             | [`wave-c/sslcommerz.md`](wave-c/sslcommerz.md)             | parallel   |
+| `12` — Acceptance gate    | (run on `main` after both branches merge)| [`wave-c/acceptance-gate.md`](wave-c/acceptance-gate.md)   | sequential |
+
+1 pre-prompt + 2 parallel adapters + 1 acceptance gate = 4 total.
+
+---
+
+## Cross-cutting decisions (every Wave C agent reads this)
+
+These are decided up-front so no Wave C agent has to think about them.
+
+### 1. Wave A + Wave B contracts are read-only
+
+The locked sections of `PHASE_1_WAVE_A_REPORT.md` and `PHASE_1_WAVE_B_REPORT.md` are binding. Specifically for Wave C:
+
+- The `PaymentProvider` interface (`initiate` / `queryStatus` / `refund` / `supports`), the `VendorResponse` record, `VendorStatus` enum, `VendorPaymentRequest` / `VendorRefundRequest` / `VendorCredentials` records, the `Vendor` enum (after sub-prompt `0` extends it once), the `TokenService` / `VendorAuthClient` interfaces, and the `ResilienceConfig` circuit-breaker registry are **byte-locked**.
+- `ApiResult<T>`, `ErrorCode` enum, `Money` record — unchanged. Wave C adapters MUST map every vendor error to an existing `ErrorCode` value; **adding a new `ErrorCode` is forbidden** (route unknown vendor errors to `MFS_ADAPTER_FAILURE`). The available `ErrorCode` values for adapter mapping are: `VALIDATION_ERROR`, `UNAUTHORIZED`, `FORBIDDEN`, `RESOURCE_NOT_FOUND`, `RESOURCE_ALREADY_EXISTS`, `INVALID_OPERATION_STATE`, `INSUFFICIENT_FUNDS`, `IDEMPOTENCY_CONFLICT`, `MFS_ADAPTER_FAILURE`, `VENDOR_DOWN`, `QUOTA_EXCEEDED`, `RISK_REJECTED`, `TOKEN_EXPIRED`, `INTERNAL_ERROR`. Use `RESOURCE_ALREADY_EXISTS` (not the non-existent `DUPLICATE_RESOURCE`) for duplicate-transaction style errors.
+- Provisioning's `VendorConfig.vendor` CHECK constraint is extended once in sub-prompt `0` (V1016); per-adapter agents do NOT add migrations.
+- **`PartnerCredentialsConfig` carve-out:** Wave B shipped `PartnerCredentialsConfig` as a free-form `Map<String, Map<String, String>>` keyed by lowercase vendor name. It is **additively extensible** — adding a new vendor's credentials means adding a YAML block under `conflux.adapters.partner-credentials.{vendor}.*`. There is no Java code change. Existing vendor entries are byte-locked.
+
+If a Wave C agent thinks an interface needs a new parameter, **stop and request a cross-cutting decision**.
+
+### 2. `DOCS/contracts/openapi.json` is regenerated by the merge-train orchestrator
+
+Not by individual agents. Adapters expose no new REST endpoints; the only API-surface effect is the extended `Vendor` enum showing up in `VendorConfigDto.vendor` values, and the gate regenerates the spec once.
+
+### 3. No root-pom dependency additions
+
+**Confirmed at orchestration time:** WireMock (`org.wiremock:wiremock-jetty12` 3.10.0) is already on the test classpath of both `conflux-adapters` and `conflux-application`. OkHttp is on the main classpath of `conflux-adapters`. Jackson + AssertJ + Mockito + jqwik + Testcontainers are all already managed by the root POM. **No Wave C sub-prompt adds or upgrades a dependency.** If a per-vendor agent claims it needs a new library, stop and request an explicit cross-cutting decision.
+
+### 4. Flyway migration numbering
+
+Wave A claimed `V1001`–`V1011`; Wave B claimed `V1012`–`V1015`. Wave C uses:
+
+| Sub-prompt | Migration file                                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`        | `V1016__vendor_configs_extend_vendor_check.sql` — drops the old CHECK on `vendor_configs.vendor`, re-adds it with `SSLCOMMERZ` appended to the value list. |
+| `10`       | none — adapters are stateless.                                                                                                                          |
+| `11`       | none — adapters are stateless.                                                                                                                          |
+
+If a per-vendor agent thinks it needs a migration, stop and ask. (Webhook receivers, if implemented, are routes in `payment-core`, not schema.)
+
+### 5. PARTNER vs CUSTOM credential resolution (already decided in Wave B)
+
+Adapters never see the encrypted form. `payment-core`'s dispatch resolves credentials via `provisioning`'s `CredentialsResolver`, then forwards the decrypted `VendorCredentials` to the adapter's `initiate(...)`. Adapters MUST NOT cache, persist, or log credentials — treat them as PII-equivalent and let them go out of scope when `initiate` / `queryStatus` / `refund` returns.
+
+The platform-credentials config keys reserved for PARTNER mode are:
+
+| Vendor       | Config key prefix                                  | Required keys (case-sensitive map keys after Spring binding) |
+| ------------ | -------------------------------------------------- | ------------------------------------------------------------ |
+| `BKASH`      | `conflux.adapters.partner-credentials.bkash.*`      | `appKey`, `appSecret`, `username`, `password`, `baseUrl`     |
+| `SSLCOMMERZ` | `conflux.adapters.partner-credentials.sslcommerz.*` | `storeId`, `storePasswd`, `baseUrl` (sandbox vs live URL)    |
+
+`PartnerCredentialsConfig` is a `Map<String, Map<String, String>>` bound by Spring `@ConfigurationProperties` — adding a new vendor block in `application.yml` is sufficient; **no Java code change is required**. Spring relaxed binding normalizes hyphenated YAML keys (`store-id`) to camelCase map keys (`storeId`), so adapters look up `creds.get("storeId")`, not `creds.get("store-id")`. Per-vendor agents do NOT touch `PartnerCredentialsConfig.java` — they consume the resolved `VendorCredentials` via the `PaymentProvider` interface only.
+
+### 6. Token caching scope
+
+Bkash issues a `grant_token` valid ~1 hour — caches in Redis via `TokenService` keyed by `(vendor, credentialsHash)`. SSLCommerz authenticates per request (`store_id` + `store_passwd` posted with every call); it does **not** use `TokenService` and MUST NOT call `tokenService.getToken(...)`. The vendor agent decides per its API contract; document the choice in the impl class's class-level Javadoc.
+
+### 7. Vendor isolation invariant (locked Wave A)
+
+Each adapter owns an isolated `OkHttpClient` built via `HttpClientFactory`. **Two adapters must never share a connection pool or thread pool.** The Wave A "isolation test" in `conflux-adapters/src/test` is the contract — Wave C adds two new isolation cases (Bkash slow + SSLCommerz fast → fast must complete; SSLCommerz slow + Bkash fast → same). The acceptance gate (sub-prompt `12`) verifies both new cases.
+
+### 8. Coverage gate
+
+80% line / 70% branch per adapter on the merged branch. Per-sub-prompt targets: enum extension (`0`) requires no per-module gate drop and ≥ 1 unit test per new artifact (the new enum value + the new migration); each adapter (`10`, `11`) needs ≥ 80% line / ≥ 70% branch via WireMock contract tests + the `ErrorMapper` jqwik suite. ArchUnit + Spring Modulith + gitleaks + Spotless + PMD must be clean.
+
+---
+
+## Orchestration
+
+### Pre-prompt `0` — sequential, runs first
+
+A short cross-cutting commit that lands on `main` before any adapter agent starts:
+
+1. Adds `SSLCOMMERZ` to `Vendor` enum (alphabetically before `STRIPE`).
+2. Ships migration `V1016__vendor_configs_extend_vendor_check.sql` — drops + re-adds the CHECK constraint with the extended value list.
+3. Adds the `sslcommerz` sub-record to `PartnerCredentialsConfig` in `conflux-provisioning`.
+4. The `ResilienceConfig` circuit-breaker registry loops `Vendor.values()`, so a circuit breaker for `SSLCOMMERZ` materializes automatically — no edit needed.
+5. Re-runs `mvn -pl conflux-application -am verify` to confirm no Wave A/B test relies on the old enum cardinality. (The Mock-only `PaymentProviderRegistryIntegrationTest` shipped in Wave A assumes there's a `MOCK` adapter and `supports(...)` returns false for all real vendors — that assertion must already be enum-agnostic; if not, fix it as part of this sub-prompt.)
+
+Merge `phase-1/wave-c-vendor-enum` → `main` before forking the adapter branches.
+
+### Adapter sub-prompts `10` + `11` — parallel
+
+Each adapter runs in its own worktree on its own branch (`phase-1/adapter-bkash`, `phase-1/adapter-sslcommerz`). They have **no shared file footprint** other than the locked `Vendor` enum and the `ResilienceConfig` registry seeding, both of which are read-only by Wave C definition. Per-adapter work touches only:
+
+- `conflux-adapters/src/main/java/pay/conflux/backend/adapters/{bkash,sslcommerz}/...` (new sub-package per vendor)
+- `conflux-adapters/src/test/java/pay/conflux/backend/adapters/{bkash,sslcommerz}/...`
+- `conflux-application/src/main/resources/application.yml` — **read-only** (the agent verifies the config-property prefix lines up, does not edit; if a key is missing, the agent escalates to the orchestrator).
+
+The branches cannot collide.
+
+### Merge train
+
+After each adapter branch is green, the orchestrator:
+
+1. Rebases the feature branch onto current `main` (which already has sub-prompt `0`).
+2. Runs `mvn -q clean verify`.
+3. Merges with `--no-ff`.
+4. Pushes.
+
+### Acceptance gate (sub-prompt `12`)
+
+Runs once both adapter branches are merged. Verifies:
+
+- `PaymentProviderRegistry.lookup(Vendor.BKASH) == BkashAdapter` and `lookup(Vendor.SSLCOMMERZ) == SSLCommerzAdapter`.
+- The isolation test extended to two slow-vendor cases passes.
+- WireMock contract suites for both adapters pass.
+- `ErrorMapper` jqwik exhaustiveness passes for both adapters.
+- `mvn -Popenapi -pl conflux-application integration-test -DskipTests` regenerates `DOCS/contracts/openapi.json`; the only diff vs `main` is the extended `Vendor` enum value list in `VendorConfigDto`.
+
+Total wall-clock for Wave C: ~ 30 min for sub-prompt `0` + ~ 4–6 h per adapter agent (parallel) + ~ 1 h acceptance gate.
+
+---
+
+## Wave D readiness (after Wave C)
+
+Wave D rounds out the remaining real vendors from the `Vendor` enum that Wave C deferred (`NAGAD`, `ROCKET`, `UPAY`, `PATHAO`, `MCASH`, `STRIPE`). Wave D follows the same shape: one short enum/credentials pre-prompt (if any new vendor identifiers are added) + parallel adapter sub-prompts + acceptance gate. The Wave C adapter prompts are the canonical template — Wave D copies them with vendor-specific deltas only.
