@@ -58,6 +58,7 @@ class InitiatePaymentIntegrationTest {
     r.add("spring.modulith.events.jdbc.schema-initialization.enabled", () -> "true");
     r.add("conflux.auth.token-secret", () -> "test-secret-test-secret-test-secret-test-secret");
     r.add("conflux.auth.token-expiration-ms", () -> "3600000");
+    r.add("conflux.adapters.partner-credentials.MOCK.appKey", () -> "mock-test-key");
   }
 
   @Autowired private InitiatePaymentUseCase initiatePaymentUseCase;
