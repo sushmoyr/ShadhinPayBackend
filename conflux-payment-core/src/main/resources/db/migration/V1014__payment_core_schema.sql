@@ -10,7 +10,7 @@ CREATE TABLE transactions (
     business_id UUID NOT NULL,
     merchant_id UUID NOT NULL,
     amount_value NUMERIC(19, 4) NOT NULL,
-    amount_currency CHAR(3) NOT NULL DEFAULT 'BDT',
+    amount_currency VARCHAR(3) NOT NULL DEFAULT 'BDT',
     status TEXT NOT NULL CHECK (status IN (
         'INITIATED',
         'PENDING',
