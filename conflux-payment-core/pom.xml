@@ -16,10 +16,34 @@
       <groupId>pay.conflux.backend</groupId>
       <artifactId>conflux-common</artifactId>
     </dependency>
+    <dependency>
+      <groupId>pay.conflux.backend</groupId>
+      <artifactId>conflux-provisioning</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pay.conflux.backend</groupId>
+      <artifactId>conflux-risk</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pay.conflux.backend</groupId>
+      <artifactId>conflux-quota</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>pay.conflux.backend</groupId>
+      <artifactId>conflux-adapters</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-redis</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springdoc</groupId>
+      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -63,6 +87,11 @@
     <dependency>
       <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-starter-test</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-test</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
