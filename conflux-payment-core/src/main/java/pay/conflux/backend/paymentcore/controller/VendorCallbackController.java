@@ -15,7 +15,7 @@ import pay.conflux.backend.paymentcore.dto.VendorCallbackResponseDto;
  * <p>Vendor signature verification is the adapter's responsibility — the MOCK adapter does not
  * verify; real adapters in Wave C will populate per-vendor verification.
  */
-@Tag(name = "Payments - Vendor Callback")
+@Tag(name = "Payments - Callback")
 public interface VendorCallbackController {
 
   @PostMapping(PaymentCoreRoutes.PAYMENT_CALLBACK)

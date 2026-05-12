@@ -6,8 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pay.conflux.backend.common.dto.ApiResult;
 import pay.conflux.backend.common.error.ForbiddenException;
@@ -33,7 +33,7 @@ public class MerchantPaymentRefundControllerImpl implements MerchantPaymentRefun
   @PreAuthorize("hasAuthority('MERCHANT')")
   public ResponseEntity<ApiResult<RefundPaymentResponseDto>> refund(
       @PathVariable("id") UUID id,
-      @RequestHeader(PaymentCoreRoutes.HEADER_BUSINESS_ID) UUID businessId,
+      @RequestAttribute(PaymentCoreRoutes.HEADER_BUSINESS_ID) UUID businessId,
       @RequestBody @Valid RefundPaymentRestRequest body) {
 
     Transaction original =

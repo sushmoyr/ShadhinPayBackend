@@ -6,11 +6,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import pay.conflux.backend.common.dto.ApiResult;
-import pay.conflux.backend.common.error.ForbiddenException;
 import pay.conflux.backend.common.error.ResourceNotFoundException;
 import pay.conflux.backend.common.money.Money;
 import pay.conflux.backend.paymentcore.constant.PaymentCoreRoutes;
@@ -24,9 +24,11 @@ import pay.conflux.backend.paymentcore.usecase.InitiatePaymentUseCase;
 import pay.conflux.backend.paymentcore.usecase.PaymentInitiationResult;
 
 /**
- * Public REST adapter for the merchant payment surface. The auth model is filter-provided (Wave B
- * 8c wires the API-key filter that populates {@code SecurityContextHolder} and the {@code
- * X-Business-Id} header); this 8a stub trusts the header so slice tests can drive it directly.
+ * Public REST adapter for the merchant payment surface. The auth model is filter-provided: Wave B
+ * 8c installs {@code ApiKeyAuthFilter} which populates {@link
+ * org.springframework.security.core.context.SecurityContextHolder} with the {@code MERCHANT}
+ * authority and exposes the resolved {@code businessId} as the {@code X-Business-Id} request
+ * attribute, which this controller reads via {@code @RequestAttribute}.
  */
 @RestController
 @RequiredArgsConstructor
@@ -40,7 +42,7 @@ public class MerchantPaymentControllerImpl implements MerchantPaymentController 
   @PreAuthorize("hasAuthority('MERCHANT')")
   public ResponseEntity<ApiResult<PaymentResponseDto>> initiate(
       @RequestHeader(PaymentCoreRoutes.HEADER_IDEMPOTENCY_KEY) String idempotencyKey,
-      @RequestHeader(PaymentCoreRoutes.HEADER_BUSINESS_ID) UUID businessId,
+      @RequestAttribute(PaymentCoreRoutes.HEADER_BUSINESS_ID) UUID businessId,
       @RequestBody @Valid InitiatePaymentRestRequest body) {
 
     InitiatePaymentRequest request =
@@ -69,14 +71,15 @@ public class MerchantPaymentControllerImpl implements MerchantPaymentController 
   @Override
   @PreAuthorize("hasAuthority('MERCHANT')")
   public ResponseEntity<ApiResult<PaymentResponseDto>> getById(
-      @RequestHeader(PaymentCoreRoutes.HEADER_BUSINESS_ID) UUID businessId,
+      @RequestAttribute(PaymentCoreRoutes.HEADER_BUSINESS_ID) UUID businessId,
       @PathVariable("id") UUID id) {
     Transaction transaction =
         transactionRepository
             .findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Transaction", id));
     if (!transaction.getBusinessId().equals(businessId)) {
-      throw new ForbiddenException("Transaction does not belong to the requesting business");
+      // 404 (not 403) to avoid leaking the existence of another tenant's resource.
+      throw new ResourceNotFoundException("Transaction", id);
     }
     return ApiResult.ok(transactionMapper.toResponseDto(transaction));
   }

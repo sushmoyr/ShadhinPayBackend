@@ -364,6 +364,83 @@ class InitiatePaymentUseCaseImplTest {
   }
 
   @Test
+  void execute_adapterCancelled_landsCancelledAndReleasesQuota() {
+    stubProvisioningPartner();
+    stubRiskAllow();
+    UUID reservationId = UUID.randomUUID();
+    when(reserveQuotaUseCase.execute(merchantId))
+        .thenReturn(new QuotaReservation(reservationId, QuotaReservation.Status.FREE));
+    stubAdapter(new VendorResponse(VendorStatus.CANCELLED, "vt-c", null, null, null));
+    stubSaveAssignsId();
+
+    PaymentInitiationResult result = useCase.execute(request());
+
+    assertThat(result.status()).isEqualTo("CANCELLED");
+    verify(releaseQuotaUseCase).execute(merchantId, reservationId);
+    verify(confirmQuotaUseCase, never()).execute(any(), any());
+  }
+
+  @Test
+  void execute_adapterUnknown_landsPendingRecoveryAndPreservesReservation() {
+    stubProvisioningPartner();
+    stubRiskAllow();
+    UUID reservationId = UUID.randomUUID();
+    when(reserveQuotaUseCase.execute(merchantId))
+        .thenReturn(new QuotaReservation(reservationId, QuotaReservation.Status.FREE));
+    stubAdapter(new VendorResponse(VendorStatus.UNKNOWN, "vt-u", null, null, null));
+    stubSaveAssignsId();
+
+    PaymentInitiationResult result = useCase.execute(request());
+
+    assertThat(result.status()).isEqualTo("PENDING_RECOVERY");
+    verify(releaseQuotaUseCase, never()).execute(any(), any());
+    verify(confirmQuotaUseCase, never()).execute(any(), any());
+  }
+
+  @Test
+  void execute_idempotencyRecordInDbButRedisCold_returnsCachedFromDb() {
+    String idemKey = "ipk-db-hit";
+    UUID existingTxId = UUID.randomUUID();
+    java.util.Map<String, Object> payload =
+        java.util.Map.of(
+            "transactionId",
+            existingTxId.toString(),
+            "redirectUrl",
+            "https://r",
+            "status",
+            "PENDING");
+    pay.conflux.backend.paymentcore.entity.IdempotencyRecord existing =
+        pay.conflux.backend.paymentcore.entity.IdempotencyRecord.builder()
+            .id(new pay.conflux.backend.paymentcore.entity.IdempotencyRecordId(businessId, idemKey))
+            .responsePayload(payload)
+            .transactionId(existingTxId)
+            .expiresAt(java.time.Instant.now().plusSeconds(60))
+            .build();
+    when(idempotencyRecordRepository.findByBusinessIdAndRequestKey(businessId, idemKey))
+        .thenReturn(java.util.Optional.of(existing));
+
+    PaymentInitiationResult result =
+        useCase.execute(
+            new pay.conflux.backend.paymentcore.usecase.InitiatePaymentRequest(
+                businessId,
+                new Money(new BigDecimal("100.00"), "BDT"),
+                "MOCK",
+                "order-1",
+                "https://merchant/return",
+                "https://merchant/webhook",
+                java.util.Map.of(),
+                idemKey));
+
+    assertThat(result.transactionId()).isEqualTo(existingTxId);
+    verifyNoInteractions(
+        getVendorConfigUseCase,
+        evaluateTransactionUseCase,
+        paymentProviderRegistry,
+        transactionRepository,
+        webhookOutboxRepository);
+  }
+
+  @Test
   void execute_persistsWebhookOutboxAndIdempotencyRecord() {
     stubProvisioningPartner();
     stubRiskAllow();

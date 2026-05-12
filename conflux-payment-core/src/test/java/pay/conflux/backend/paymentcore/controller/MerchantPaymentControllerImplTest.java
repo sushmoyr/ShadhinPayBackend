@@ -67,7 +67,7 @@ class MerchantPaymentControllerImplTest {
         .perform(
             post(PaymentCoreRoutes.PAYMENTS)
                 .header(PaymentCoreRoutes.HEADER_IDEMPOTENCY_KEY, "idem-1")
-                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString())
+                .requestAttr(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
         .andExpect(status().isCreated())
@@ -90,7 +90,7 @@ class MerchantPaymentControllerImplTest {
     mockMvc
         .perform(
             post(PaymentCoreRoutes.PAYMENTS)
-                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString())
+                .requestAttr(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
         .andExpect(status().isBadRequest());
@@ -98,7 +98,7 @@ class MerchantPaymentControllerImplTest {
 
   @Test
   @WithMockUser(authorities = "MERCHANT")
-  void post_missingBusinessId_returns400() throws Exception {
+  void post_missingBusinessIdAttribute_returns400() throws Exception {
     InitiatePaymentRestRequest body = new InitiatePaymentRestRequest();
     body.setAmount(new BigDecimal("100.00"));
     body.setCurrency("BDT");
@@ -128,7 +128,7 @@ class MerchantPaymentControllerImplTest {
         .perform(
             post(PaymentCoreRoutes.PAYMENTS)
                 .header(PaymentCoreRoutes.HEADER_IDEMPOTENCY_KEY, "idem-1")
-                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString())
+                .requestAttr(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
         .andExpect(status().isBadRequest());
@@ -136,7 +136,7 @@ class MerchantPaymentControllerImplTest {
 
   @Test
   @WithMockUser(authorities = "MERCHANT")
-  void getById_tenantMismatch_returns403() throws Exception {
+  void getById_tenantMismatch_returns404ToHideExistence() throws Exception {
     UUID businessId = UUID.randomUUID();
     UUID otherBusinessId = UUID.randomUUID();
     UUID trxId = UUID.randomUUID();
@@ -158,8 +158,8 @@ class MerchantPaymentControllerImplTest {
     mockMvc
         .perform(
             get(PaymentCoreRoutes.PAYMENTS + "/" + trxId)
-                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString()))
-        .andExpect(status().isForbidden());
+                .requestAttr(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId))
+        .andExpect(status().isNotFound());
   }
 
   @Test
@@ -177,7 +177,7 @@ class MerchantPaymentControllerImplTest {
     mockMvc
         .perform(
             post(PaymentCoreRoutes.PAYMENTS + "/" + trxId + "/refund")
-                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, UUID.randomUUID().toString())
+                .requestAttr(PaymentCoreRoutes.HEADER_BUSINESS_ID, UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
         .andExpect(status().isNotFound());
@@ -209,7 +209,7 @@ class MerchantPaymentControllerImplTest {
     mockMvc
         .perform(
             post(PaymentCoreRoutes.PAYMENTS + "/" + trxId + "/refund")
-                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString())
+                .requestAttr(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
         .andExpect(status().isForbidden());
@@ -247,7 +247,7 @@ class MerchantPaymentControllerImplTest {
     mockMvc
         .perform(
             post(PaymentCoreRoutes.PAYMENTS + "/" + trxId + "/refund")
-                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString())
+                .requestAttr(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(body)))
         .andExpect(status().isOk())
