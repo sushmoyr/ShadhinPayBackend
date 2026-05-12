@@ -6,6 +6,7 @@
 > **Read first (every sub-prompt):** the [Wave B index](../PHASE_1_WAVE_B_PROMPTS.md) — cross-cutting decisions; `conflux-payment-core/CLAUDE.md`; `DOCS/features/payment-core/PRD.md`; `DOCS/features/payment-core/TECH_SPEC.md`; `PHASE_1_WAVE_A_REPORT.md` § "Locked Wave A Contracts".
 
 Sub-prompts:
+
 1. [8a — schema + `InitiatePaymentUseCaseImpl` + public REST controllers](#prompt-8a--payment-core-schema--initiatepaymentusecaseimpl--public-rest-controllers)
 2. [8b — vendor-callback + webhook outbox dispatcher + reconciliation scheduler](#prompt-8b--payment-core-vendor-callback--webhook-outbox-dispatcher--reconciliation-scheduler)
 3. [8c — concurrency + property tests + Modulith replay + coverage push](#prompt-8c--payment-core-concurrency--property-tests--modulith-replay--coverage-push)

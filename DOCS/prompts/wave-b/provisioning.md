@@ -5,6 +5,7 @@
 > **Read first (every sub-prompt):** the [Wave B index](../PHASE_1_WAVE_B_PROMPTS.md) — cross-cutting decisions; `conflux-provisioning/CLAUDE.md`; `DOCS/features/provisioning/PRD.md`; `DOCS/features/provisioning/TECH_SPEC.md`; `PHASE_1_WAVE_A_REPORT.md` § "Locked Wave A Contracts".
 
 Sub-prompts:
+
 1. [7a — schema + entities + write-side use cases](#prompt-7a--provisioning-schema--entities--write-side-use-cases)
 2. [7b — cross-module impls + Modulith listeners + Redis cache](#prompt-7b--provisioning-cross-module-impls--modulith-listeners--redis-cache)
 3. [7c — controllers + coverage push + jqwik invariants](#prompt-7c--provisioning-controllers--coverage-push--jqwik-invariants)
