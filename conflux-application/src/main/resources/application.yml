@@ -43,6 +43,15 @@ conflux:
     free-per-month: 10
     pending-ttl-seconds: 1800
     final-ttl-seconds: 3024000
+  adapters:
+    partner-credentials:
+      # Inner map keys are kept verbatim by Spring's binder (no relaxed canonicalization
+      # for Map<String, Map<String, String>> value entries), so write them as the
+      # camelCase keys adapters look up: storeId, storePasswd, baseUrl.
+      sslcommerz:
+        storeId: ${SSLCOMMERZ_STORE_ID:}
+        storePasswd: ${SSLCOMMERZ_STORE_PASSWD:}
+        baseUrl: ${SSLCOMMERZ_BASE_URL:https://sandbox.sslcommerz.com}
 
 ---
 spring:
