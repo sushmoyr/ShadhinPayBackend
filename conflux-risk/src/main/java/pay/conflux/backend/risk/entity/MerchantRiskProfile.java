@@ -10,6 +10,7 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import pay.conflux.backend.common.entity.Auditable;
+import pay.conflux.backend.risk.enums.TrustLevel;
 
 @Entity
 @Table(name = "merchant_risk_profiles")

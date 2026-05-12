@@ -7,7 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import pay.conflux.backend.risk.entity.BlacklistType;
+import pay.conflux.backend.risk.enums.BlacklistType;
 import pay.conflux.backend.risk.repository.BlacklistEntryRepository;
 
 @Slf4j

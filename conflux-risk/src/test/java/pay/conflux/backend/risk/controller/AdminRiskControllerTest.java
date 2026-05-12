@@ -20,9 +20,9 @@ import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pay.conflux.backend.risk.dto.*;
-import pay.conflux.backend.risk.entity.BlacklistType;
-import pay.conflux.backend.risk.entity.RuleAction;
-import pay.conflux.backend.risk.entity.TrustLevel;
+import pay.conflux.backend.risk.enums.BlacklistType;
+import pay.conflux.backend.risk.enums.RuleAction;
+import pay.conflux.backend.risk.enums.TrustLevel;
 import pay.conflux.backend.risk.usecase.internal.*;
 
 @WebMvcTest(AdminRiskControllerImpl.class)

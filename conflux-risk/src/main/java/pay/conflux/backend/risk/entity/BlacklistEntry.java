@@ -13,6 +13,7 @@ import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 import pay.conflux.backend.common.entity.AuditableAndSoftDeletable;
+import pay.conflux.backend.risk.enums.BlacklistType;
 
 @Entity
 @Table(name = "blacklist_entries")

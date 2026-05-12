@@ -1,7 +1,7 @@
 package pay.conflux.backend.risk.dto;
 
 import java.util.UUID;
-import pay.conflux.backend.risk.entity.RuleAction;
+import pay.conflux.backend.risk.enums.RuleAction;
 
 public record RiskRuleDto(
     UUID id,

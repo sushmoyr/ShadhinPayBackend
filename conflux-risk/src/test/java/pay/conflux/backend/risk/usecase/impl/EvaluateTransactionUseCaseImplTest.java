@@ -21,10 +21,10 @@ import pay.conflux.backend.risk.engine.CompiledRuleCache;
 import pay.conflux.backend.risk.engine.SafeSpelEvaluator;
 import pay.conflux.backend.risk.engine.VelocityCounter;
 import pay.conflux.backend.risk.engine.VelocityDimension;
-import pay.conflux.backend.risk.entity.BlacklistType;
 import pay.conflux.backend.risk.entity.RiskEvaluation;
 import pay.conflux.backend.risk.entity.RiskRule;
-import pay.conflux.backend.risk.entity.RuleAction;
+import pay.conflux.backend.risk.enums.BlacklistType;
+import pay.conflux.backend.risk.enums.RuleAction;
 import pay.conflux.backend.risk.repository.MerchantRiskProfileRepository;
 import pay.conflux.backend.risk.repository.RiskEvaluationRepository;
 import pay.conflux.backend.risk.usecase.RiskDecision;
@@ -242,7 +242,7 @@ class EvaluateTransactionUseCaseImplTest {
       pay.conflux.backend.risk.entity.MerchantRiskProfile profile =
           new pay.conflux.backend.risk.entity.MerchantRiskProfile();
       profile.setMerchantId(MERCHANT_ID);
-      profile.setTrustLevel(pay.conflux.backend.risk.entity.TrustLevel.NEW);
+      profile.setTrustLevel(pay.conflux.backend.risk.enums.TrustLevel.NEW);
       profile.setCustomLimits("{\"per_merchant_minute\": 1}");
       when(merchantRiskProfileRepository.findByMerchantId(MERCHANT_ID))
           .thenReturn(Optional.of(profile));
@@ -262,7 +262,7 @@ class EvaluateTransactionUseCaseImplTest {
       pay.conflux.backend.risk.entity.MerchantRiskProfile profile =
           new pay.conflux.backend.risk.entity.MerchantRiskProfile();
       profile.setMerchantId(MERCHANT_ID);
-      profile.setTrustLevel(pay.conflux.backend.risk.entity.TrustLevel.NEW);
+      profile.setTrustLevel(pay.conflux.backend.risk.enums.TrustLevel.NEW);
       profile.setCustomLimits("{not valid json");
       when(merchantRiskProfileRepository.findByMerchantId(MERCHANT_ID))
           .thenReturn(Optional.of(profile));
@@ -275,9 +275,9 @@ class EvaluateTransactionUseCaseImplTest {
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.EnumSource(
-        value = pay.conflux.backend.risk.entity.TrustLevel.class)
+        value = pay.conflux.backend.risk.enums.TrustLevel.class)
     @DisplayName("each TrustLevel resolves to its own defaults")
-    void eachTrustLevelHasDistinctDefaults(pay.conflux.backend.risk.entity.TrustLevel level) {
+    void eachTrustLevelHasDistinctDefaults(pay.conflux.backend.risk.enums.TrustLevel level) {
       pay.conflux.backend.risk.entity.MerchantRiskProfile profile =
           new pay.conflux.backend.risk.entity.MerchantRiskProfile();
       profile.setMerchantId(MERCHANT_ID);
@@ -297,7 +297,7 @@ class EvaluateTransactionUseCaseImplTest {
       pay.conflux.backend.risk.entity.MerchantRiskProfile profile =
           new pay.conflux.backend.risk.entity.MerchantRiskProfile();
       profile.setMerchantId(MERCHANT_ID);
-      profile.setTrustLevel(pay.conflux.backend.risk.entity.TrustLevel.VIP);
+      profile.setTrustLevel(pay.conflux.backend.risk.enums.TrustLevel.VIP);
       profile.setCustomLimits("   ");
       when(merchantRiskProfileRepository.findByMerchantId(MERCHANT_ID))
           .thenReturn(Optional.of(profile));

@@ -14,7 +14,7 @@ import pay.conflux.backend.common.error.ResourceNotFoundException;
 import pay.conflux.backend.risk.dto.RiskRuleDto;
 import pay.conflux.backend.risk.dto.UpdateRiskRuleRequest;
 import pay.conflux.backend.risk.entity.RiskRule;
-import pay.conflux.backend.risk.entity.RuleAction;
+import pay.conflux.backend.risk.enums.RuleAction;
 import pay.conflux.backend.risk.events.RiskRuleChangedEvent;
 import pay.conflux.backend.risk.mapper.RiskRuleMapper;
 import pay.conflux.backend.risk.repository.RiskRuleRepository;

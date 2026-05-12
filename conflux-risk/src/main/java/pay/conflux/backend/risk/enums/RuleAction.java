@@ -1,4 +1,4 @@
-package pay.conflux.backend.risk.entity;
+package pay.conflux.backend.risk.enums;
 
 public enum RuleAction {
   ALLOW,

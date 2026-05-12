@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.context.ApplicationEventPublisher;
 import pay.conflux.backend.risk.entity.BlacklistEntry;
-import pay.conflux.backend.risk.entity.BlacklistType;
+import pay.conflux.backend.risk.enums.BlacklistType;
 import pay.conflux.backend.risk.events.BlacklistEntryChangedEvent;
 import pay.conflux.backend.risk.repository.BlacklistEntryRepository;
 

@@ -1,6 +1,6 @@
 package pay.conflux.backend.risk.events;
 
-import pay.conflux.backend.risk.entity.BlacklistType;
+import pay.conflux.backend.risk.enums.BlacklistType;
 
 /**
  * Domain event signalling that a {@code BlacklistEntry} has been added or removed. Consumed

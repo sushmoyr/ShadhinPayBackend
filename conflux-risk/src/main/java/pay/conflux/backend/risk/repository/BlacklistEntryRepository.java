@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import pay.conflux.backend.risk.entity.BlacklistEntry;
-import pay.conflux.backend.risk.entity.BlacklistType;
+import pay.conflux.backend.risk.enums.BlacklistType;
 
 @Repository
 public interface BlacklistEntryRepository extends JpaRepository<BlacklistEntry, UUID> {

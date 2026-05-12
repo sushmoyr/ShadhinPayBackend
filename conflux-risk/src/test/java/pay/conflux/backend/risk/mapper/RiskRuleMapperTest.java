@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import pay.conflux.backend.risk.dto.RiskRuleDto;
 import pay.conflux.backend.risk.entity.RiskRule;
-import pay.conflux.backend.risk.entity.RuleAction;
+import pay.conflux.backend.risk.enums.RuleAction;
 
 class RiskRuleMapperTest {
 

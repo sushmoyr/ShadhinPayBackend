@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.SetOperations;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import pay.conflux.backend.risk.entity.BlacklistEntry;
-import pay.conflux.backend.risk.entity.BlacklistType;
+import pay.conflux.backend.risk.enums.BlacklistType;
 import pay.conflux.backend.risk.repository.BlacklistEntryRepository;
 
 @ExtendWith(MockitoExtension.class)

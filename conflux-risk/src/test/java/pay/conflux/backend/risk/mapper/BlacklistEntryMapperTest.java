@@ -7,7 +7,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import pay.conflux.backend.risk.dto.BlacklistEntryDto;
 import pay.conflux.backend.risk.entity.BlacklistEntry;
-import pay.conflux.backend.risk.entity.BlacklistType;
+import pay.conflux.backend.risk.enums.BlacklistType;
 
 class BlacklistEntryMapperTest {
 

@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import pay.conflux.backend.risk.dto.MerchantRiskProfileDto;
 import pay.conflux.backend.risk.entity.MerchantRiskProfile;
-import pay.conflux.backend.risk.entity.TrustLevel;
+import pay.conflux.backend.risk.enums.TrustLevel;
 
 class MerchantRiskProfileMapperTest {
 
