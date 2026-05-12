@@ -150,9 +150,37 @@ Agents must **not** see other modules' implementations.
 |---|---|---|
 | `invoice` | `payment-core.InitiatePaymentUseCase`, listens for `PaymentCompletedEvent` | Slug-based public pages, QR codes, expiry job |
 | `settlement` | `ledger`, `payment-core` | CSV reconciliation, T+2 payouts, BEFTN files, VAT/AIT |
-| `BkashAdapter`, `NagadAdapter`, `StripeAdapter` | Adapter port from Wave A | One agent per adapter, each isolated; uses `TokenService` for session tokens |
+| `BkashAdapter`, `SslcommerzAdapter` | Adapter port from Wave A | One agent per adapter, each isolated; uses `TokenService` for session tokens. NAGAD / ROCKET / UPAY / PATHAO / MCASH / STRIPE deferred to Wave D. |
 
-### 4.4 Wave coordination rules
+### 4.4 Wave D — Admin auth + remaining adapters (parallel after Wave C merges)
+
+Wave D has **two independent tracks** that run in parallel; their branches share
+the same acceptance gate.
+
+| Track | Module | Notes |
+|---|---|---|
+| **Admin auth** | `identity` (extension) + `application` (filter chain) | Adds `AdminProfile.adminTier` column (V101N migration), `JwtAuthorizationFilter` for admin/console traffic, `AuthenticateAdminUseCase`, `CreateAdminUseCase` / `UpdateAdminTierUseCase` / `DisableAdminUseCase`, and the `SuperAdminBootstrap` env-var seed. Closes the PRD §4.3 ↔ TECH_SPEC §2.1 ↔ code drift that left admin endpoints unreachable through Waves A–C. See `DOCS/features/identity/TECH_SPEC.md §3.1, §4.3, §4.4`. |
+| **Remaining adapters** | `adapters` | `NagadAdapter`, `RocketAdapter`, `UpayAdapter`, `PathaoAdapter`, `McashAdapter`, `StripeAdapter`. Copies the Wave C adapter prompts as a template with vendor-specific deltas; the `Vendor` enum already contains all six values (Wave A baseline), so no enum extension is required and the sub-prompt 0 pattern from Wave C does not apply unless a vendor's auth flavor needs a new credentials map shape. |
+
+**Cross-cutting Wave D follow-up:** `BkashAdapter.confirm(paymentID, creds)` shipped
+as a public adapter method in Wave C but was not wired into `payment-core`'s
+redirect-callback path. The admin-auth track does not touch this; the
+remaining-adapters track owns the small `payment-core` patch that detects
+`Vendor.BKASH` on callback and invokes `confirm` before marking the transaction
+`COMPLETED`. Track this in the Wave D acceptance report.
+
+**Wave D guardrails specific to admin auth:**
+- The `User` and `AdminProfile` schemas were finalized in Wave A; the admin-tier
+  column is an additive migration only (no rewrites). Existing admin rows in
+  `staging` / `prod` must be backfilled to `VIEWER` by default; an explicit
+  follow-up promotion is required to elevate them.
+- The bootstrap bean MUST refuse to start on a fresh database with no super-admin
+  env vars set. CI integration tests exercise this fail-fast path.
+- `ApiKeyAuthFilter` (Wave B 8c) and `JwtAuthorizationFilter` (Wave D) must be
+  mutually exclusive per request — verify with a controller test that an
+  API-keyed request never receives an admin authority and vice versa.
+
+### 4.5 Wave coordination rules
 - **A wave ships before the next wave starts.** No partial promotions; this prevents downstream agents from building against half-baked contracts.
 - **Each wave ends with a merge train** of all its branches into `main`, with full CI green.
 - **An orchestrator agent** runs the merge train and resolves trivial conflicts. Non-trivial conflicts kick back to the originating agent.

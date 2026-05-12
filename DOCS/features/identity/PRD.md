@@ -21,6 +21,12 @@ To provide a secure and moderated entry point for Merchants to join the ConfluxP
 *   **As a Platform Manager**, I want to review a merchant's uploaded documents and either Approve or Reject them with a reason.
 *   **As a Platform Manager**, I want to Block/Suspend a merchant if they violate platform policies.
 
+### 3.3 Super Admin Stories
+*   **As a Super Admin**, I want to log in to a dedicated admin console using my email and password.
+*   **As a Super Admin**, I want to create new admin accounts (Viewer / Manager / Super) so the platform team can self-serve onboarding.
+*   **As a Super Admin**, I want to change another admin's tier or disable their account if they leave the team.
+*   **As a Super Admin**, I expect the system to refuse to start on a fresh database until a bootstrap super-admin identity is provided via configuration, so no environment is ever silently un-administered.
+
 ## 4. Functional Requirements
 
 ### 4.1 Merchant Lifecycle (State Machine)
@@ -40,10 +46,40 @@ The system must enforce the following states for a Merchant Account:
 *   **Storage:** Documents must be stored securely (using the `conflux-secrets` or `library-storage` logic).
 
 ### 4.3 Role-Based Access Control (RBAC)
-*   **ROLE_MERCHANT:** Access to own dashboard, business settings, and reports.
-*   **ROLE_ADMIN_VIEWER:** Read-only access to platform stats.
-*   **ROLE_ADMIN_MANAGER:** Ability to verify/reject merchants.
-*   **ROLE_SUPER_ADMIN:** Full access, including managing other Admins and global configs.
+Two coarse `userType` values gate the high-level surface; a finer `adminTier` on
+`AdminProfile` distinguishes admin capability. Higher tiers strictly inherit the
+authorities of lower tiers (a MANAGER can do everything a VIEWER can; a SUPER
+can do everything a MANAGER can).
+
+| Role | `userType` | `adminTier` | Capabilities |
+|---|---|---|---|
+| **ROLE_MERCHANT** | `MERCHANT` | — | Own dashboard, business settings, API key management, reports |
+| **ROLE_ADMIN_VIEWER** | `ADMIN` | `VIEWER` | Read-only access to platform stats, merchant queue, ledger journals |
+| **ROLE_ADMIN_MANAGER** | `ADMIN` | `MANAGER` | Verify/reject merchants, block/unblock users, manage businesses, + all VIEWER rights |
+| **ROLE_SUPER_ADMIN** | `ADMIN` | `SUPER` | Create/update/disable other admins, change global configs, + all MANAGER rights |
+
+**Bootstrap (super-admin seed).** Exactly one `SUPER` admin MUST exist before
+the platform can be administered. On every application boot, the system reads
+`SUPER_ADMIN_IDENTIFIER` and `SUPER_ADMIN_PASSWORD` from configuration and:
+
+1. If the env vars are absent **and** no SUPER admin exists in the database, the
+   application MUST fail-fast at startup. There is no path to a running cluster
+   without at least one super admin.
+2. If a SUPER admin with the given identifier does not exist, create one
+   (BCrypt the password, `User.status = ACTIVE`, `AdminProfile.adminTier = SUPER`,
+   `AdminProfile.department = "Platform"`, `employeeId = "SUPER-0001"`).
+3. If a SUPER admin with the given identifier already exists, the seed is a no-op
+   unless the configured password's BCrypt hash differs from the stored hash, in
+   which case the stored hash is updated (env-driven rotation).
+
+**Promotion / demotion rules.**
+*   Only a SUPER admin may create new admins of any tier or change another
+    admin's tier.
+*   The system MUST refuse any operation that would leave zero SUPER admins
+    (self-demotion of the last super admin is rejected with a clear error).
+*   Disabling an admin (`User.status = BLOCKED`) revokes their access
+    immediately on the next request; tokens are not separately revoked because
+    the auth filter consults `User.status` on every call.
 
 ### 4.4 Multi-Factor Authentication (MFA)
 *   Support for TOTP (Google Authenticator) or SMS-based OTP for login and sensitive actions (like API key generation).
@@ -58,3 +94,6 @@ The system must enforce the following states for a Merchant Account:
 *   Platform Managers receive a notification when a new merchant submits documents.
 *   Rejection requires a mandatory "Reason" string sent to the merchant via email/SMS.
 *   Blocking a merchant immediately revokes their ability to initiate new transactions.
+*   A fresh database boot fails fast with a clear error if `SUPER_ADMIN_IDENTIFIER` / `SUPER_ADMIN_PASSWORD` are absent; once set, exactly one super admin row is created and subsequent boots are idempotent.
+*   Admin endpoints reject requests from `MERCHANT` users with `403`; `VIEWER` admins can read but cannot mutate; `MANAGER` admins can mutate merchants/businesses but cannot manage other admins; `SUPER` admins can manage other admins.
+*   A super admin cannot demote themselves if doing so would leave zero super admins in the system.

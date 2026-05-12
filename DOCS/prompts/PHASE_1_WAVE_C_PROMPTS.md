@@ -134,4 +134,52 @@ Total wall-clock for Wave C: ~ 30 min for sub-prompt `0` + ~ 4–6 h per adapter
 
 ## Wave D readiness (after Wave C)
 
-Wave D rounds out the remaining real vendors from the `Vendor` enum that Wave C deferred (`NAGAD`, `ROCKET`, `UPAY`, `PATHAO`, `MCASH`, `STRIPE`). Wave D follows the same shape: one short enum/credentials pre-prompt (if any new vendor identifiers are added) + parallel adapter sub-prompts + acceptance gate. The Wave C adapter prompts are the canonical template — Wave D copies them with vendor-specific deltas only.
+Wave D has **two independent tracks** that share a single acceptance gate; see
+`DEVELOPMENT_WORKFLOW.md §4.4` for the canonical scope.
+
+### Track 1 — Admin auth (closes PRD §4.3 drift)
+
+Wave A shipped the merchant identity surface and Wave B 8c shipped the
+merchant-side `ApiKeyAuthFilter`, but the admin surface defined by
+`@PreAuthorize("hasAuthority('ADMIN_MANAGER')")` annotations in `identity`,
+`provisioning`, `ledger`, and `risk` was never reachable — no production filter
+ever grants `ADMIN_*` authorities, and there is no super-admin seed. Wave D
+Track 1 closes this:
+
+- Add `AdminProfile.adminTier` column (`VIEWER` / `MANAGER` / `SUPER`) via a new
+  Flyway migration, with `MANAGER`/`VIEWER` derived from `User.userType=ADMIN`
+  + tier.
+- Implement `AuthenticateAdminUseCase`, `CreateAdminUseCase`,
+  `UpdateAdminTierUseCase`, `DisableAdminUseCase` (last-SUPER guard inside the
+  same transaction).
+- Implement `JwtAuthorizationFilter` per `ARCHITECTURE.md §17` and wire it into
+  the chain alongside the existing `ApiKeyAuthFilter` (mutually exclusive per
+  request — keyed on token shape).
+- Implement `SuperAdminBootstrap` (`ApplicationRunner`) per
+  `DOCS/features/identity/TECH_SPEC.md §4.4` — env-var-driven idempotent seed,
+  fail-fast on a fresh DB with no super-admin and no env vars set.
+- Tests per `TECH_SPEC.md §5` — authority resolution matrix, bootstrap fail-fast,
+  bootstrap idempotency, password rotation, last-SUPER guard.
+
+### Track 2 — Remaining adapters
+
+Rounds out the real vendors from the `Vendor` enum that Wave C deferred
+(`NAGAD`, `ROCKET`, `UPAY`, `PATHAO`, `MCASH`, `STRIPE`). Follows the same shape
+as Wave C: one credentials-shape pre-prompt **only if** a vendor's auth flavor
+needs a new map key set, then parallel adapter sub-prompts, then the
+acceptance gate. The Wave C adapter prompts (`wave-c/bkash.md`,
+`wave-c/sslcommerz.md`) are the canonical template — Wave D Track 2 copies them
+with vendor-specific deltas only.
+
+Track 2 also owns the cross-cutting **Bkash Execute step follow-up**:
+`BkashAdapter.confirm(paymentID, creds)` was shipped in Wave C as a public
+adapter method but not wired into `payment-core`'s redirect-callback path.
+Wave D Track 2 adds the small `payment-core` patch (detect `Vendor.BKASH` on
+callback, invoke `confirm`, then mark `COMPLETED`).
+
+### Shared acceptance gate
+
+The Wave D acceptance gate verifies both tracks together: every new adapter
+resolves through `PaymentProviderRegistry`, the admin authority matrix passes,
+the super-admin bootstrap fails fast on a fresh container, and the merged
+OpenAPI spec reflects only the additive changes from both tracks.

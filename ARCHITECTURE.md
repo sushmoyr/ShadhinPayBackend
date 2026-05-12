@@ -1180,6 +1180,21 @@ public class OrderPlacedEventConsumer {
 
 ## 17. Security & Authorization
 
+### Filter Chain Overview
+
+Two authentication filters coexist in the chain and are mutually exclusive per
+request — exactly one resolves each authenticated call:
+
+| Filter | Header shape | Surface | Authority granted |
+|---|---|---|---|
+| `ApiKeyAuthFilter` | `Authorization: Bearer <api-key>` or `X-API-Key: <api-key>` | Merchant integration endpoints (`/api/v1/payments`, `/api/v1/business/...`) | `MERCHANT` |
+| `JwtAuthorizationFilter` | `Authorization: Bearer <jwt>` | Console endpoints (`/api/v1/merchant/me`, `/api/v1/admin/...`, MFA management) | `MERCHANT`, or `ADMIN_VIEWER` / `ADMIN_MANAGER` / `SUPER_ADMIN` per the tier table in `DOCS/features/identity/TECH_SPEC.md §4.3` |
+
+The two filters disambiguate by token shape — merchant API keys are fixed-length
+opaque strings issued by `provisioning`, while JWTs carry the JWT three-segment
+`header.payload.signature` form. Whitelisted public routes (`/auth/login`,
+`/merchant/register`, vendor callbacks, actuator health, OpenAPI docs) skip both.
+
 ### JWT Filter
 
 ```java
