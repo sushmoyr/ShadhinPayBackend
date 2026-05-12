@@ -1,7 +1,6 @@
 package pay.conflux.backend.risk.entity;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -15,6 +14,8 @@ import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import pay.conflux.backend.common.entity.Auditable;
 import pay.conflux.backend.risk.usecase.RiskDecision;
 
@@ -41,7 +42,7 @@ public class RiskEvaluation extends Auditable {
   @Column(nullable = false, length = 8)
   private RiskDecision.Action decision;
 
-  @Convert(converter = UuidListConverter.class)
+  @JdbcTypeCode(SqlTypes.JSON)
   @Column(name = "triggered_rule_ids", columnDefinition = "jsonb")
   private List<UUID> triggeredRuleIds = new ArrayList<>();
 
