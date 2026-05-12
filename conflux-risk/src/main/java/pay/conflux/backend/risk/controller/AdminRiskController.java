@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import pay.conflux.backend.common.dto.ApiResult;
 import pay.conflux.backend.risk.constant.RiskRoutes;
@@ -27,46 +28,47 @@ import pay.conflux.backend.risk.usecase.RiskDecision;
  * Admin port for risk management: rules, blacklist, merchant risk profiles, and case review. All
  * endpoints require {@code ADMIN_MANAGER} authority — enforced on the adapter.
  */
+@RequestMapping(RiskRoutes.ADMIN_RISK_BASE)
 public interface AdminRiskController {
 
-  @PostMapping(RiskRoutes.ADMIN_RISK_RULES)
+  @PostMapping("/rules")
   ResponseEntity<ApiResult<RiskRuleDto>> createRule(@RequestBody CreateRiskRuleRequest request);
 
-  @PutMapping(RiskRoutes.ADMIN_RISK_RULE_BY_ID)
+  @PutMapping("/rules/{id}")
   ResponseEntity<ApiResult<RiskRuleDto>> updateRule(
       @PathVariable UUID id, @RequestBody UpdateRiskRuleRequest request);
 
-  @DeleteMapping(RiskRoutes.ADMIN_RISK_RULE_BY_ID)
+  @DeleteMapping("/rules/{id}")
   ResponseEntity<ApiResult<Void>> disableRule(@PathVariable UUID id);
 
-  @GetMapping(RiskRoutes.ADMIN_RISK_RULES)
+  @GetMapping("/rules")
   ResponseEntity<ApiResult<List<RiskRuleDto>>> listRules(Pageable pageable);
 
-  @PostMapping(RiskRoutes.ADMIN_RISK_BLACKLIST)
+  @PostMapping("/blacklist")
   ResponseEntity<ApiResult<BlacklistEntryDto>> addBlacklistEntry(
       @RequestBody AddBlacklistEntryRequest request);
 
-  @DeleteMapping(RiskRoutes.ADMIN_RISK_BLACKLIST_BY_ID)
+  @DeleteMapping("/blacklist/{id}")
   ResponseEntity<ApiResult<Void>> removeBlacklistEntry(@PathVariable UUID id);
 
-  @GetMapping(RiskRoutes.ADMIN_RISK_BLACKLIST)
+  @GetMapping("/blacklist")
   ResponseEntity<ApiResult<List<BlacklistEntryDto>>> listBlacklistEntries(Pageable pageable);
 
-  @PutMapping(RiskRoutes.ADMIN_RISK_PROFILE_BY_ID)
+  @PutMapping("/profiles/{merchantId}")
   ResponseEntity<ApiResult<MerchantRiskProfileDto>> upsertProfile(
       @PathVariable UUID merchantId, @RequestBody UpsertMerchantRiskProfileRequest request);
 
-  @GetMapping(RiskRoutes.ADMIN_RISK_PROFILE_BY_ID)
+  @GetMapping("/profiles/{merchantId}")
   ResponseEntity<ApiResult<MerchantRiskProfileDto>> getProfile(@PathVariable UUID merchantId);
 
-  @GetMapping(RiskRoutes.ADMIN_RISK_CASES)
+  @GetMapping("/cases")
   ResponseEntity<ApiResult<List<RiskCaseDto>>> listCases(
       @RequestParam(required = false, defaultValue = "FLAG") RiskDecision.Action status,
       Pageable pageable);
 
-  @PostMapping(RiskRoutes.ADMIN_RISK_CASE_APPROVE)
+  @PostMapping("/cases/{evaluationId}/approve")
   ResponseEntity<ApiResult<Void>> approveCase(@PathVariable UUID evaluationId);
 
-  @PostMapping(RiskRoutes.ADMIN_RISK_CASE_REJECT)
+  @PostMapping("/cases/{evaluationId}/reject")
   ResponseEntity<ApiResult<Void>> rejectCase(@PathVariable UUID evaluationId);
 }

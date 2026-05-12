@@ -5,18 +5,20 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import pay.conflux.backend.common.dto.ApiResult;
 import pay.conflux.backend.identity.constant.IdentityRoutes;
 import pay.conflux.backend.identity.dto.KycSubmissionRequest;
 import pay.conflux.backend.identity.dto.MerchantOnboardingDto;
 
 @Tag(name = "Merchant Onboarding", description = "KYC submission and onboarding status endpoints")
+@RequestMapping(IdentityRoutes.MERCHANT_BASE)
 public interface MerchantOnboardingController {
 
-  @PostMapping(IdentityRoutes.MERCHANT_KYC)
+  @PostMapping("/kyc")
   ResponseEntity<ApiResult<MerchantOnboardingDto>> submitKyc(
       UUID userId, KycSubmissionRequest request);
 
-  @GetMapping(IdentityRoutes.MERCHANT_ME)
+  @GetMapping("/me")
   ResponseEntity<ApiResult<MerchantOnboardingDto>> getMe(UUID userId);
 }

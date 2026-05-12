@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import pay.conflux.backend.common.dto.ApiResult;
 import pay.conflux.backend.provisioning.constant.ProvisioningRoutes;
 import pay.conflux.backend.provisioning.dto.ApiKeyDto;
@@ -22,30 +23,31 @@ import pay.conflux.backend.provisioning.dto.VendorConfigDto;
 @Tag(
     name = "Provisioning - Merchant",
     description = "Merchant-owned business, vendor, API-key and webhook configuration endpoints")
+@RequestMapping(ProvisioningRoutes.MERCHANT_BUSINESSES)
 public interface MerchantBusinessController {
 
-  @PostMapping(ProvisioningRoutes.MERCHANT_BUSINESSES)
+  @PostMapping
   ResponseEntity<ApiResult<BusinessDto>> createBusiness(CreateBusinessRequest request);
 
-  @GetMapping(ProvisioningRoutes.MERCHANT_BUSINESSES)
+  @GetMapping
   ResponseEntity<ApiResult<List<BusinessSummaryDto>>> listBusinesses();
 
-  @GetMapping(ProvisioningRoutes.MERCHANT_BUSINESS_BY_ID)
+  @GetMapping("/{id}")
   ResponseEntity<ApiResult<BusinessDto>> getBusiness(UUID id);
 
-  @PostMapping(ProvisioningRoutes.MERCHANT_BUSINESS_VENDORS)
+  @PostMapping("/{id}/vendors")
   ResponseEntity<ApiResult<VendorConfigDto>> configureVendor(
       UUID id, ConfigureVendorRequest request);
 
-  @PostMapping(ProvisioningRoutes.MERCHANT_BUSINESS_APIKEYS)
+  @PostMapping("/{id}/api-keys")
   ResponseEntity<ApiResult<ApiKeyDto>> generateApiKey(UUID id, GenerateApiKeyRequest request);
 
-  @PostMapping(ProvisioningRoutes.MERCHANT_BUSINESS_APIKEY_ROTATE)
+  @PostMapping("/{id}/api-keys/{keyId}/rotate")
   ResponseEntity<ApiResult<ApiKeyDto>> rotateApiKey(UUID id, UUID keyId);
 
-  @DeleteMapping(ProvisioningRoutes.MERCHANT_BUSINESS_APIKEY_BY_ID)
+  @DeleteMapping("/{id}/api-keys/{keyId}")
   ResponseEntity<ApiResult<Void>> revokeApiKey(UUID id, UUID keyId);
 
-  @PutMapping(ProvisioningRoutes.MERCHANT_BUSINESS_WEBHOOK)
+  @PutMapping("/{id}/webhook")
   ResponseEntity<ApiResult<BusinessDto>> updateWebhook(UUID id, UpdateWebhookRequest request);
 }
