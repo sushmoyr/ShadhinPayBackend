@@ -6,6 +6,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,7 +28,7 @@ public class BusinessSpec implements Specification<Business> {
     predicates.add(cb.equal(root.get("deleted"), false));
 
     if (search != null && !search.isBlank()) {
-      String pattern = "%" + search.toLowerCase() + "%";
+      String pattern = "%" + search.toLowerCase(Locale.ROOT) + "%";
       predicates.add(
           cb.or(
               cb.like(cb.lower(root.get("name")), pattern),

@@ -1,5 +1,6 @@
 package pay.conflux.backend.provisioning.config;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -28,17 +29,18 @@ public class PartnerCredentialsConfig {
   }
 
   /**
-   * Lookup by vendor name. Returns {@code null} if no entry exists — callers decide how to surface
+   * Lookup by vendor name. Returns an empty map if no entry exists — callers decide how to surface
    * the failure.
    */
   public Map<String, String> credentialsFor(String vendor) {
     if (vendor == null) {
-      return null;
+      return Collections.emptyMap();
     }
     Map<String, String> direct = partnerCredentials.get(vendor);
     if (direct != null) {
       return direct;
     }
-    return partnerCredentials.get(vendor.toUpperCase(Locale.ROOT));
+    Map<String, String> upper = partnerCredentials.get(vendor.toUpperCase(Locale.ROOT));
+    return upper == null ? Collections.emptyMap() : upper;
   }
 }

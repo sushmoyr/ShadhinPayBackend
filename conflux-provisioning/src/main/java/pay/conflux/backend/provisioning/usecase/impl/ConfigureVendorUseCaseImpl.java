@@ -83,7 +83,7 @@ public class ConfigureVendorUseCaseImpl implements ConfigureVendorUseCase {
     try {
       return Enum.valueOf(type, value);
     } catch (IllegalArgumentException e) {
-      throw new ValidationException("Unknown " + field + ": " + value);
+      throw new ValidationException("Unknown " + field + ": " + value, e);
     }
   }
 }

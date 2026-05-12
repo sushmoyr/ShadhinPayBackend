@@ -105,7 +105,7 @@ public class GetVendorConfigUseCaseImpl implements GetVendorConfigUseCase {
     try {
       return Vendor.valueOf(value);
     } catch (IllegalArgumentException e) {
-      throw new ValidationException("Unknown vendor: " + value);
+      throw new ValidationException("Unknown vendor: " + value, e);
     }
   }
 }

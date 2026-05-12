@@ -100,7 +100,7 @@ public class GenerateApiKeyUseCaseImpl implements GenerateApiKeyUseCase {
     try {
       return Environment.valueOf(value);
     } catch (IllegalArgumentException e) {
-      throw new ValidationException("Unknown environment: " + value);
+      throw new ValidationException("Unknown environment: " + value, e);
     }
   }
 }

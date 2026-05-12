@@ -15,6 +15,13 @@ public abstract class ApiOperationException extends RuntimeException {
     this.status = status;
   }
 
+  protected ApiOperationException(
+      String message, Throwable cause, ErrorCode errorCode, HttpStatus status) {
+    super(message, cause);
+    this.errorCode = errorCode;
+    this.status = status;
+  }
+
   protected ApiOperationException(String message, ErrorCode errorCode) {
     this(message, errorCode, HttpStatus.BAD_REQUEST);
   }
