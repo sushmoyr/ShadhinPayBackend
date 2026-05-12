@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import pay.conflux.backend.identity.events.UserBlockedEvent;
 import pay.conflux.backend.provisioning.constant.BusinessStatus;
 import pay.conflux.backend.provisioning.entity.Business;
@@ -30,7 +29,6 @@ public class UserBlockedEventListener {
   private final StringRedisTemplate redisTemplate;
 
   @ApplicationModuleListener
-  @Transactional
   public void on(UserBlockedEvent event) {
     List<Business> businesses = businessRepository.findByMerchantIdAndDeletedFalse(event.userId());
     for (Business business : businesses) {
