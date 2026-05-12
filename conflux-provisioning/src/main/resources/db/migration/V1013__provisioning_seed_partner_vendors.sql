@@ -1,0 +1,1 @@
+-- Reserved for Wave C partner vendor seed data. Intentionally a no-op in Phase 1.
