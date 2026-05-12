@@ -12,3 +12,9 @@ spring:
 conflux:
   auth:
     token-secret: test-secret-do-not-use-in-prod-32bytes!
+  adapters:
+    partner-credentials:
+      sslcommerz:
+        storeId: ""
+        storePasswd: ""
+        baseUrl: "https://sandbox.sslcommerz.com"
