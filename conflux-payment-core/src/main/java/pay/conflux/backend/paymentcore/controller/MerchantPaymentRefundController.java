@@ -6,12 +6,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import pay.conflux.backend.common.dto.ApiResult;
 import pay.conflux.backend.paymentcore.constant.PaymentCoreRoutes;
-import pay.conflux.backend.paymentcore.dto.PaymentResponseDto;
+import pay.conflux.backend.paymentcore.dto.RefundPaymentResponseDto;
+import pay.conflux.backend.paymentcore.dto.RefundPaymentRestRequest;
 
-/** 8a stub. 8b will replace with a real refund implementation. */
 @Tag(name = "Payments - Merchant")
 public interface MerchantPaymentRefundController {
 
   @PostMapping(PaymentCoreRoutes.PAYMENT_REFUND)
-  ResponseEntity<ApiResult<PaymentResponseDto>> refund(UUID id);
+  ResponseEntity<ApiResult<RefundPaymentResponseDto>> refund(
+      UUID id, UUID businessId, RefundPaymentRestRequest body);
 }

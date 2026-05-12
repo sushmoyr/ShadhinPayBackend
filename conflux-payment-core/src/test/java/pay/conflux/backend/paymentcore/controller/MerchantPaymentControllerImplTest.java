@@ -44,6 +44,9 @@ class MerchantPaymentControllerImplTest {
   @MockitoBean private TransactionRepository transactionRepository;
   @MockitoBean private TransactionMapper transactionMapper;
 
+  @MockitoBean
+  private pay.conflux.backend.paymentcore.usecase.RefundPaymentUseCase refundPaymentUseCase;
+
   @Test
   @WithMockUser(authorities = "MERCHANT")
   void post_happyPath_returns201WithEnvelope() throws Exception {
@@ -161,10 +164,95 @@ class MerchantPaymentControllerImplTest {
 
   @Test
   @WithMockUser(authorities = "MERCHANT")
-  void refund_returns501() throws Exception {
+  void refund_unknownTransaction_returns404() throws Exception {
     UUID trxId = UUID.randomUUID();
+    when(transactionRepository.findById(trxId)).thenReturn(Optional.empty());
+
+    pay.conflux.backend.paymentcore.dto.RefundPaymentRestRequest body =
+        new pay.conflux.backend.paymentcore.dto.RefundPaymentRestRequest();
+    body.setAmount(new BigDecimal("10.00"));
+    body.setCurrency("BDT");
+    body.setReason("x");
+
     mockMvc
-        .perform(post(PaymentCoreRoutes.PAYMENTS + "/" + trxId + "/refund"))
-        .andExpect(status().isNotImplemented());
+        .perform(
+            post(PaymentCoreRoutes.PAYMENTS + "/" + trxId + "/refund")
+                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, UUID.randomUUID().toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+        .andExpect(status().isNotFound());
+  }
+
+  @Test
+  @WithMockUser(authorities = "MERCHANT")
+  void refund_tenantMismatch_returns403() throws Exception {
+    UUID businessId = UUID.randomUUID();
+    UUID otherBusinessId = UUID.randomUUID();
+    UUID trxId = UUID.randomUUID();
+
+    Transaction other = new Transaction();
+    other.setId(trxId);
+    other.setBusinessId(otherBusinessId);
+    other.setStatus(TransactionStatus.COMPLETED);
+    other.setMode(TransactionMode.PARTNER);
+    other.setVendor("MOCK");
+    other.setAmountValue(new BigDecimal("100.00"));
+    other.setAmountCurrency("BDT");
+    other.setMerchantOrderReference("o1");
+    when(transactionRepository.findById(trxId)).thenReturn(Optional.of(other));
+
+    pay.conflux.backend.paymentcore.dto.RefundPaymentRestRequest body =
+        new pay.conflux.backend.paymentcore.dto.RefundPaymentRestRequest();
+    body.setAmount(new BigDecimal("10.00"));
+    body.setReason("x");
+
+    mockMvc
+        .perform(
+            post(PaymentCoreRoutes.PAYMENTS + "/" + trxId + "/refund")
+                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  @WithMockUser(authorities = "MERCHANT")
+  void refund_happyPath_returns200WithEnvelope() throws Exception {
+    UUID businessId = UUID.randomUUID();
+    UUID trxId = UUID.randomUUID();
+    UUID refundId = UUID.randomUUID();
+
+    Transaction original = new Transaction();
+    original.setId(trxId);
+    original.setBusinessId(businessId);
+    original.setMerchantId(UUID.randomUUID());
+    original.setStatus(TransactionStatus.COMPLETED);
+    original.setMode(TransactionMode.PARTNER);
+    original.setVendor("MOCK");
+    original.setAmountValue(new BigDecimal("100.00"));
+    original.setAmountCurrency("BDT");
+    original.setMerchantOrderReference("o1");
+    when(transactionRepository.findById(trxId)).thenReturn(Optional.of(original));
+    when(refundPaymentUseCase.execute(any()))
+        .thenReturn(
+            new pay.conflux.backend.paymentcore.usecase.RefundPaymentResult(
+                refundId, trxId, "COMPLETED"));
+
+    pay.conflux.backend.paymentcore.dto.RefundPaymentRestRequest body =
+        new pay.conflux.backend.paymentcore.dto.RefundPaymentRestRequest();
+    body.setAmount(new BigDecimal("50.00"));
+    body.setCurrency("BDT");
+    body.setReason("customer request");
+
+    mockMvc
+        .perform(
+            post(PaymentCoreRoutes.PAYMENTS + "/" + trxId + "/refund")
+                .header(PaymentCoreRoutes.HEADER_BUSINESS_ID, businessId.toString())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(body)))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data.refundTransactionId").value(refundId.toString()))
+        .andExpect(jsonPath("$.data.status").value("COMPLETED"))
+        .andExpect(jsonPath("$.meta.success").value(true));
   }
 }
