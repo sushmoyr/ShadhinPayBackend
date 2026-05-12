@@ -52,6 +52,8 @@ public class ApiKeyAuthFilter extends OncePerRequestFilter {
   private static final List<String> WHITELIST =
       List.of(
           "/api/v1/payments/callback/**",
+          "/api/v1/auth/login",
+          "/api/v1/merchant/register",
           "/actuator/health",
           "/actuator/health/**",
           "/v3/api-docs",

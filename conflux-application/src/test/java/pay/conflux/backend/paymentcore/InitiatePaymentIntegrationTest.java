@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,13 @@ class InitiatePaymentIntegrationTest {
   @Autowired private JdbcTemplate jdbcTemplate;
 
   private UUID merchantUserId;
+
+  @BeforeEach
+  void cleanUp() {
+    webhookOutboxRepository.deleteAll();
+    idempotencyRecordRepository.deleteAll();
+    transactionRepository.deleteAll();
+  }
 
   private UUID seedBusiness() {
     UUID userId = UUID.randomUUID();
