@@ -78,7 +78,7 @@ public class RefundPaymentUseCaseImpl implements RefundPaymentUseCase {
     try {
       vendorEnum = Vendor.valueOf(original.getVendor());
     } catch (IllegalArgumentException e) {
-      throw new ValidationException("Unsupported vendor: " + original.getVendor());
+      throw new ValidationException("Unsupported vendor: " + original.getVendor(), e);
     }
 
     Transaction refund =

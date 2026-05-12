@@ -186,6 +186,7 @@ public class InitiatePaymentUseCaseImpl implements InitiatePaymentUseCase {
   // Step 3 — risk (fail-CLOSED)
   // ---------------------------------------------------------------------
 
+  @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
   private RiskDecision evaluateRiskFailClosed(InitiatePaymentRequest request, UUID merchantId) {
     try {
       TransactionContext ctx =
@@ -204,7 +205,8 @@ public class InitiatePaymentUseCaseImpl implements InitiatePaymentUseCase {
           request.businessId(),
           traceId(),
           e);
-      throw new RiskRejectedException("Risk evaluation failed; transaction blocked (fail-CLOSED)");
+      throw new RiskRejectedException(
+          "Risk evaluation failed; transaction blocked (fail-CLOSED)", e);
     }
   }
 
@@ -238,7 +240,7 @@ public class InitiatePaymentUseCaseImpl implements InitiatePaymentUseCase {
             .amountValue(request.amount().amount())
             .amountCurrency(request.amount().currency())
             .status(status)
-            .vendor(request.vendor().toUpperCase())
+            .vendor(request.vendor().toUpperCase(java.util.Locale.ROOT))
             .mode(mode)
             .merchantOrderReference(request.merchantOrderReference())
             .callbackUrl(request.callbackUrl())
@@ -262,7 +264,7 @@ public class InitiatePaymentUseCaseImpl implements InitiatePaymentUseCase {
     try {
       vendorEnum = Vendor.valueOf(transaction.getVendor());
     } catch (IllegalArgumentException e) {
-      throw new ValidationException("Unsupported vendor: " + transaction.getVendor());
+      throw new ValidationException("Unsupported vendor: " + transaction.getVendor(), e);
     }
 
     VendorResponse response;
@@ -467,7 +469,7 @@ public class InitiatePaymentUseCaseImpl implements InitiatePaymentUseCase {
         transaction.getBusinessId(),
         transaction.getVendor(),
         response.errorCode() == null ? ErrorCode.MFS_ADAPTER_FAILURE : response.errorCode(),
-        response.rawResponse() == null ? "vendor returned FAILED" : "vendor returned FAILED",
+        response.rawResponse() == null ? "vendor returned FAILED" : response.rawResponse(),
         transaction.getMetadata() == null ? Map.of() : copyToStringMap(transaction.getMetadata()),
         Instant.now(),
         traceId());
@@ -481,7 +483,7 @@ public class InitiatePaymentUseCaseImpl implements InitiatePaymentUseCase {
     try {
       return TransactionMode.valueOf(mode);
     } catch (IllegalArgumentException e) {
-      throw new ValidationException("Unknown vendor mode: " + mode);
+      throw new ValidationException("Unknown vendor mode: " + mode, e);
     }
   }
 

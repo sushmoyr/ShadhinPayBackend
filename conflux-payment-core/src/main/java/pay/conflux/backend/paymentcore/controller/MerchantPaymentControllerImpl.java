@@ -63,7 +63,7 @@ public class MerchantPaymentControllerImpl implements MerchantPaymentController 
     response.setRedirectUrl(result.redirectUrl());
     response.setAmount(body.getAmount());
     response.setCurrency(body.getCurrency());
-    response.setVendor(body.getVendor().toUpperCase());
+    response.setVendor(body.getVendor().toUpperCase(java.util.Locale.ROOT));
     response.setMerchantOrderReference(body.getMerchantOrderReference());
     return ApiResult.created(response);
   }

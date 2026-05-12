@@ -14,4 +14,8 @@ public class RiskRejectedException extends ApiOperationException {
   public RiskRejectedException(String message) {
     super(message, ErrorCode.RISK_REJECTED, HttpStatus.FORBIDDEN);
   }
+
+  public RiskRejectedException(String message, Throwable cause) {
+    super(message, cause, ErrorCode.RISK_REJECTED, HttpStatus.FORBIDDEN);
+  }
 }

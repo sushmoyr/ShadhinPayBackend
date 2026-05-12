@@ -130,7 +130,7 @@ public class ProcessVendorCallbackUseCaseImpl implements ProcessVendorCallbackUs
     try {
       vendorEnum = Vendor.valueOf(transaction.getVendor());
     } catch (IllegalArgumentException e) {
-      throw new ValidationException("Unsupported vendor: " + transaction.getVendor());
+      throw new ValidationException("Unsupported vendor: " + transaction.getVendor(), e);
     }
 
     VendorResponse response;
