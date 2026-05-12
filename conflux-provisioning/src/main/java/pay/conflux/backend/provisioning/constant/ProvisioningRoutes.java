@@ -12,6 +12,8 @@ public final class ProvisioningRoutes {
   public static final String MERCHANT_BUSINESS_APIKEY_ROTATE =
       "/api/v1/merchant/businesses/{id}/api-keys/{keyId}/rotate";
   public static final String MERCHANT_BUSINESS_WEBHOOK = "/api/v1/merchant/businesses/{id}/webhook";
+  public static final String MERCHANT_BUSINESS_WEBHOOK_TEST =
+      "/api/v1/merchant/businesses/{id}/webhook/test";
 
   public static final String ADMIN_BUSINESSES = "/api/v1/admin/businesses";
   public static final String ADMIN_BUSINESS_BY_ID = "/api/v1/admin/businesses/{id}";

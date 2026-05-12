@@ -12,11 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import pay.conflux.backend.common.dto.ApiResult;
 import pay.conflux.backend.provisioning.constant.ProvisioningRoutes;
 import pay.conflux.backend.provisioning.dto.ApiKeyDto;
+import pay.conflux.backend.provisioning.dto.ApiKeySummaryDto;
 import pay.conflux.backend.provisioning.dto.BusinessDto;
 import pay.conflux.backend.provisioning.dto.BusinessSummaryDto;
 import pay.conflux.backend.provisioning.dto.ConfigureVendorRequest;
 import pay.conflux.backend.provisioning.dto.CreateBusinessRequest;
 import pay.conflux.backend.provisioning.dto.GenerateApiKeyRequest;
+import pay.conflux.backend.provisioning.dto.TestWebhookResultDto;
 import pay.conflux.backend.provisioning.dto.UpdateWebhookRequest;
 import pay.conflux.backend.provisioning.dto.VendorConfigDto;
 
@@ -39,8 +41,14 @@ public interface MerchantBusinessController {
   ResponseEntity<ApiResult<VendorConfigDto>> configureVendor(
       UUID id, ConfigureVendorRequest request);
 
+  @GetMapping("/{id}/vendors")
+  ResponseEntity<ApiResult<List<VendorConfigDto>>> listVendorConfigs(UUID id);
+
   @PostMapping("/{id}/api-keys")
   ResponseEntity<ApiResult<ApiKeyDto>> generateApiKey(UUID id, GenerateApiKeyRequest request);
+
+  @GetMapping("/{id}/api-keys")
+  ResponseEntity<ApiResult<List<ApiKeySummaryDto>>> listApiKeys(UUID id);
 
   @PostMapping("/{id}/api-keys/{keyId}/rotate")
   ResponseEntity<ApiResult<ApiKeyDto>> rotateApiKey(UUID id, UUID keyId);
@@ -50,4 +58,7 @@ public interface MerchantBusinessController {
 
   @PutMapping("/{id}/webhook")
   ResponseEntity<ApiResult<BusinessDto>> updateWebhook(UUID id, UpdateWebhookRequest request);
+
+  @PostMapping("/{id}/webhook/test")
+  ResponseEntity<ApiResult<TestWebhookResultDto>> testWebhook(UUID id);
 }

@@ -13,20 +13,25 @@ import pay.conflux.backend.common.dto.ApiResult;
 import pay.conflux.backend.common.error.UnauthorizedException;
 import pay.conflux.backend.common.security.SecurityUtils;
 import pay.conflux.backend.provisioning.dto.ApiKeyDto;
+import pay.conflux.backend.provisioning.dto.ApiKeySummaryDto;
 import pay.conflux.backend.provisioning.dto.BusinessDto;
 import pay.conflux.backend.provisioning.dto.BusinessSummaryDto;
 import pay.conflux.backend.provisioning.dto.ConfigureVendorRequest;
 import pay.conflux.backend.provisioning.dto.CreateBusinessRequest;
 import pay.conflux.backend.provisioning.dto.GenerateApiKeyRequest;
+import pay.conflux.backend.provisioning.dto.TestWebhookResultDto;
 import pay.conflux.backend.provisioning.dto.UpdateWebhookRequest;
 import pay.conflux.backend.provisioning.dto.VendorConfigDto;
 import pay.conflux.backend.provisioning.usecase.ConfigureVendorUseCase;
 import pay.conflux.backend.provisioning.usecase.CreateBusinessUseCase;
 import pay.conflux.backend.provisioning.usecase.GenerateApiKeyUseCase;
 import pay.conflux.backend.provisioning.usecase.GetBusinessUseCase;
+import pay.conflux.backend.provisioning.usecase.ListApiKeysUseCase;
 import pay.conflux.backend.provisioning.usecase.ListBusinessesUseCase;
+import pay.conflux.backend.provisioning.usecase.ListVendorConfigsUseCase;
 import pay.conflux.backend.provisioning.usecase.RevokeApiKeyUseCase;
 import pay.conflux.backend.provisioning.usecase.RotateApiKeyUseCase;
+import pay.conflux.backend.provisioning.usecase.SendTestWebhookUseCase;
 import pay.conflux.backend.provisioning.usecase.UpdateWebhookUseCase;
 import pay.conflux.backend.provisioning.usecase.impl.BusinessOwnershipGuard;
 
@@ -38,10 +43,13 @@ public class MerchantBusinessControllerImpl implements MerchantBusinessControlle
   private final ListBusinessesUseCase listBusinessesUseCase;
   private final GetBusinessUseCase getBusinessUseCase;
   private final ConfigureVendorUseCase configureVendorUseCase;
+  private final ListVendorConfigsUseCase listVendorConfigsUseCase;
   private final GenerateApiKeyUseCase generateApiKeyUseCase;
+  private final ListApiKeysUseCase listApiKeysUseCase;
   private final RotateApiKeyUseCase rotateApiKeyUseCase;
   private final RevokeApiKeyUseCase revokeApiKeyUseCase;
   private final UpdateWebhookUseCase updateWebhookUseCase;
+  private final SendTestWebhookUseCase sendTestWebhookUseCase;
   private final BusinessOwnershipGuard ownershipGuard;
 
   @Override
@@ -80,10 +88,24 @@ public class MerchantBusinessControllerImpl implements MerchantBusinessControlle
 
   @Override
   @PreAuthorize("hasAuthority('MERCHANT')")
+  public ResponseEntity<ApiResult<List<VendorConfigDto>>> listVendorConfigs(@PathVariable UUID id) {
+    ownershipGuard.requireOwned(id);
+    return ApiResult.ok(listVendorConfigsUseCase.execute(id));
+  }
+
+  @Override
+  @PreAuthorize("hasAuthority('MERCHANT')")
   public ResponseEntity<ApiResult<ApiKeyDto>> generateApiKey(
       @PathVariable UUID id, @RequestBody @Valid GenerateApiKeyRequest request) {
     ownershipGuard.requireOwned(id);
     return ApiResult.created(generateApiKeyUseCase.execute(id, request));
+  }
+
+  @Override
+  @PreAuthorize("hasAuthority('MERCHANT')")
+  public ResponseEntity<ApiResult<List<ApiKeySummaryDto>>> listApiKeys(@PathVariable UUID id) {
+    ownershipGuard.requireOwned(id);
+    return ApiResult.ok(listApiKeysUseCase.execute(id));
   }
 
   @Override
@@ -109,5 +131,12 @@ public class MerchantBusinessControllerImpl implements MerchantBusinessControlle
       @PathVariable UUID id, @RequestBody @Valid UpdateWebhookRequest request) {
     ownershipGuard.requireOwned(id);
     return ApiResult.ok(updateWebhookUseCase.execute(id, request, true));
+  }
+
+  @Override
+  @PreAuthorize("hasAuthority('MERCHANT')")
+  public ResponseEntity<ApiResult<TestWebhookResultDto>> testWebhook(@PathVariable UUID id) {
+    ownershipGuard.requireOwned(id);
+    return ApiResult.ok(sendTestWebhookUseCase.execute(id));
   }
 }

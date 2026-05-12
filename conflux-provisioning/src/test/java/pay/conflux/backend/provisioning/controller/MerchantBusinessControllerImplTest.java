@@ -49,9 +49,12 @@ import pay.conflux.backend.provisioning.usecase.ConfigureVendorUseCase;
 import pay.conflux.backend.provisioning.usecase.CreateBusinessUseCase;
 import pay.conflux.backend.provisioning.usecase.GenerateApiKeyUseCase;
 import pay.conflux.backend.provisioning.usecase.GetBusinessUseCase;
+import pay.conflux.backend.provisioning.usecase.ListApiKeysUseCase;
 import pay.conflux.backend.provisioning.usecase.ListBusinessesUseCase;
+import pay.conflux.backend.provisioning.usecase.ListVendorConfigsUseCase;
 import pay.conflux.backend.provisioning.usecase.RevokeApiKeyUseCase;
 import pay.conflux.backend.provisioning.usecase.RotateApiKeyUseCase;
+import pay.conflux.backend.provisioning.usecase.SendTestWebhookUseCase;
 import pay.conflux.backend.provisioning.usecase.UpdateWebhookUseCase;
 import pay.conflux.backend.provisioning.usecase.impl.BusinessOwnershipGuard;
 
@@ -66,10 +69,13 @@ class MerchantBusinessControllerImplTest {
   @MockitoBean private ListBusinessesUseCase listBusinessesUseCase;
   @MockitoBean private GetBusinessUseCase getBusinessUseCase;
   @MockitoBean private ConfigureVendorUseCase configureVendorUseCase;
+  @MockitoBean private ListVendorConfigsUseCase listVendorConfigsUseCase;
   @MockitoBean private GenerateApiKeyUseCase generateApiKeyUseCase;
+  @MockitoBean private ListApiKeysUseCase listApiKeysUseCase;
   @MockitoBean private RotateApiKeyUseCase rotateApiKeyUseCase;
   @MockitoBean private RevokeApiKeyUseCase revokeApiKeyUseCase;
   @MockitoBean private UpdateWebhookUseCase updateWebhookUseCase;
+  @MockitoBean private SendTestWebhookUseCase sendTestWebhookUseCase;
   @MockitoBean private BusinessOwnershipGuard ownershipGuard;
 
   private MockedStatic<SecurityUtils> securityUtilsMock;
