@@ -45,21 +45,21 @@ import pay.conflux.backend.provisioning.usecase.GetBusinessByApiKeyUseCase;
  *
  * <ol>
  *   <li>Seed an ACTIVE merchant {@code User} in identity.
- *   <li>Publish {@link MerchantVerifiedEvent} via the modulith bus; the provisioning
- *       {@code MerchantVerifiedEventListener} auto-creates the default business.
+ *   <li>Publish {@link MerchantVerifiedEvent} via the modulith bus; the provisioning {@code
+ *       MerchantVerifiedEventListener} auto-creates the default business.
  *   <li>Configure a MOCK vendor for that business (PARTNER mode) so the use case can dispatch.
- *   <li>Generate an API key for the new business and resolve it via
- *       {@link GetBusinessByApiKeyUseCase} — proves the provisioning hot-path round-trip.
+ *   <li>Generate an API key for the new business and resolve it via {@link
+ *       GetBusinessByApiKeyUseCase} — proves the provisioning hot-path round-trip.
  *   <li>Call {@link InitiatePaymentUseCase} with that {@code businessId} and assert the
  *       transaction, idempotency record, and {@code webhook_outbox} row land in the same DB tx.
- *   <li>Sign the queued webhook payload with the merchant's webhook secret and assert the
- *       signature verifies — the dispatcher uses the same {@link WebhookSigner} on delivery.
+ *   <li>Sign the queued webhook payload with the merchant's webhook secret and assert the signature
+ *       verifies — the dispatcher uses the same {@link WebhookSigner} on delivery.
  * </ol>
  *
- * <p>Testcontainers gated — disabled when Docker is absent (CI runs it; local skips). Webhook
- * HTTP delivery to WireMock is exercised by the focused {@code WebhookOutboxDispatcherTest} in
- * the payment-core module; this test verifies the outbox row is enqueued and the HMAC signing
- * step the dispatcher will perform is byte-correct.
+ * <p>Testcontainers gated — disabled when Docker is absent (CI runs it; local skips). Webhook HTTP
+ * delivery to WireMock is exercised by the focused {@code WebhookOutboxDispatcherTest} in the
+ * payment-core module; this test verifies the outbox row is enqueued and the HMAC signing step the
+ * dispatcher will perform is byte-correct.
  */
 @SpringBootTest(classes = ConfluxPayApplication.class)
 @Testcontainers(disabledWithoutDocker = true)
@@ -163,7 +163,8 @@ class WaveBGoldenPathIT {
         .isEqualTo(businessId);
     assertThat(ctx.merchantId()).isEqualTo(merchantUserId);
 
-    // 5. Initiate a payment — orchestrator runs idempotency → provisioning → risk → quota → adapter.
+    // 5. Initiate a payment — orchestrator runs idempotency → provisioning → risk → quota →
+    // adapter.
     String idemKey = "ipk-golden-" + UUID.randomUUID();
     Map<String, String> metadata = new HashMap<>();
     metadata.put("mock_outcome", "default");
