@@ -353,8 +353,6 @@ public class SslcommerzAdapter implements PaymentProvider {
       return objectMapper.readTree(body);
     } catch (JsonProcessingException e) {
       throw new MfsAdapterException(ErrorCode.MFS_ADAPTER_FAILURE, "sslcommerz malformed json", e);
-    } catch (IOException e) {
-      throw new MfsAdapterException(ErrorCode.MFS_ADAPTER_FAILURE, "sslcommerz io reading json", e);
     }
   }
 
