@@ -1,12 +1,13 @@
 # Phase 1 Wave D — Track 1: admin auth + super admin seed
 
 > **Branch:** `phase-1/wave-d-admin-auth` — single branch with **three sequential sub-prompts (1a → 1b → 1c)** committed inside it. Each sub-prompt commits independently.
->
+> 
 > **Scope:** close the PRD §4.3 ↔ TECH_SPEC §2.1 ↔ code drift that left admin endpoints unreachable through Waves A–C. Adds `AdminProfile.adminTier`, the four admin auth use cases, `SuperAdminBootstrap`, and `JwtAuthorizationFilter` alongside the existing `ApiKeyAuthFilter`.
->
+> 
 > **Read first (every sub-prompt):** [Wave D index](../PHASE_1_WAVE_D_PROMPTS.md) — cross-cutting decisions; `DOCS/features/identity/PRD.md §3.3, §4.3, §6`; `DOCS/features/identity/TECH_SPEC.md §2.1, §3.1, §3.2, §4.3, §4.4, §5`; `ARCHITECTURE.md §17` (filter chain overview); `conflux-identity/CLAUDE.md`.
 
 Sub-prompts:
+
 1. [1a — admin tier schema](#prompt-1a--admin-tier-schema)
 2. [1b — use cases + super-admin bootstrap](#prompt-1b--admin-use-cases--bootstrap)
 3. [1c — JWT filter + SecurityConfig wiring](#prompt-1c--jwt-filter--integration)
@@ -15,7 +16,7 @@ Sub-prompts:
 
 ## Prompt 1a — admin tier schema
 
-```
+```markdown
 You are starting Phase 1 Wave D Track 1 on branch `phase-1/wave-d-admin-auth`.
 This is the FIRST of THREE sequential sub-prompts (1a → 1b → 1c) that build the
 admin auth surface on the SAME branch. After this sub-prompt commits, the next
@@ -106,7 +107,7 @@ Output: file tree of additions, the V1017 SQL diff, the `AdminProfile` field dif
 
 ## Prompt 1b — admin use cases + bootstrap
 
-```
+```markdown
 You are continuing Wave D Track 1 on branch `phase-1/wave-d-admin-auth`. Prompt
 1a is merged into this branch as a prior commit. Your sub-scope: the four admin
 use cases (Authenticate, Create, Update tier, Disable), the JWT-issuing
@@ -244,7 +245,7 @@ Output: file tree, list of new `IdentityRoutes`, sample admin-login JSON (reques
 
 ## Prompt 1c — JWT filter + integration
 
-```
+```markdown
 You are completing Wave D Track 1 on branch `phase-1/wave-d-admin-auth`. Prompts
 1a and 1b are merged into this branch. Your sub-scope: `JwtAuthorizationFilter`,
 its integration into `SecurityConfig` alongside the existing `ApiKeyAuthFilter`,
