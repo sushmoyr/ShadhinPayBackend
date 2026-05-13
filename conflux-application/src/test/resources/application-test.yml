@@ -12,6 +12,12 @@ spring:
 conflux:
   auth:
     token-secret: test-secret-do-not-use-in-prod-32bytes!
+  identity:
+    jwt:
+      secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    super-admin:
+      identifier: test-super@example.com
+      password: test-super-password
   adapters:
     partner-credentials:
       sslcommerz:

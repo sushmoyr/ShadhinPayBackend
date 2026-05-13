@@ -19,6 +19,10 @@ public final class IdentityRoutes {
   public static final String ADMIN_USERS = ADMIN_BASE + "/users";
   public static final String ADMIN_USERS_BLOCK = ADMIN_USERS + "/{id}/block";
   public static final String ADMIN_USERS_UNBLOCK = ADMIN_USERS + "/{id}/unblock";
+  public static final String ADMIN_ADMINS = ADMIN_BASE + "/admins";
+  public static final String ADMIN_ADMINS_TIER = ADMIN_ADMINS + "/{id}/tier";
+  public static final String ADMIN_ADMINS_DISABLE = ADMIN_ADMINS + "/{id}/disable";
+  public static final String ADMIN_ME = ADMIN_BASE + "/me";
 
   public static final String AUTH_MFA_ENABLE = AUTH_BASE + "/mfa/enable";
   public static final String AUTH_MFA_VERIFY = AUTH_BASE + "/mfa/verify";
