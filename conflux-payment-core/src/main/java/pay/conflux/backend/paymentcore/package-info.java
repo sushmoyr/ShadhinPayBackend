@@ -10,6 +10,8 @@
       "quota :: usecase",
       "adapters",
       "adapters :: port",
-      "adapters :: support"
+      "adapters :: support",
+      "adapters :: error",
+      "adapters :: bkash"
     })
 package pay.conflux.backend.paymentcore;

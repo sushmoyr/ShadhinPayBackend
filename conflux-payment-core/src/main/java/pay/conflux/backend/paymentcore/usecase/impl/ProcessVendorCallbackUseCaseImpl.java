@@ -13,10 +13,13 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.transaction.annotation.Transactional;
+import pay.conflux.backend.adapters.bkash.BkashAdapter;
+import pay.conflux.backend.adapters.error.MfsAdapterException;
 import pay.conflux.backend.adapters.port.PaymentProvider;
 import pay.conflux.backend.adapters.port.Vendor;
 import pay.conflux.backend.adapters.port.VendorCredentials;
 import pay.conflux.backend.adapters.port.VendorResponse;
+import pay.conflux.backend.adapters.port.VendorStatus;
 import pay.conflux.backend.adapters.support.PaymentProviderRegistry;
 import pay.conflux.backend.common.annotation.UseCase;
 import pay.conflux.backend.common.error.ErrorCode;
@@ -59,6 +62,10 @@ public class ProcessVendorCallbackUseCaseImpl implements ProcessVendorCallbackUs
   private final PaymentProviderRegistry paymentProviderRegistry;
   private final CredentialsResolver credentialsResolver;
   private final ApplicationEventPublisher eventPublisher;
+
+  // Bkash Execute step is vendor-specific and intentionally not on the PaymentProvider port;
+  // see DOCS/prompts/wave-d/bkash-execute-wiring.md
+  private final BkashAdapter bkashAdapter;
 
   // Quota reservation settlement on the callback path:
   // the reservation handle is not persisted on the Transaction (would require a schema bump
@@ -135,15 +142,28 @@ public class ProcessVendorCallbackUseCaseImpl implements ProcessVendorCallbackUs
 
     VendorResponse response;
     try {
-      PaymentProvider provider = paymentProviderRegistry.lookup(vendorEnum);
       VendorCredentials creds =
           new VendorCredentials(
               credentialsResolver.resolveCredentials(
                   transaction.getBusinessId(), transaction.getVendor()));
-      response = provider.queryStatus(transaction.getVendorTransactionId(), creds);
+      if (vendorEnum == Vendor.BKASH) {
+        // Bkash Tokenized Checkout v1.2: callback indicates user authorized at the bkashURL;
+        // server-side Execute call is required to capture the payment. The Execute is invoked
+        // inside the existing @Transactional boundary so a failure rolls back any other state
+        // changes the callback handler would have made.
+        response = bkashAdapter.confirm(transaction.getVendorTransactionId(), creds);
+        if (response.status() != VendorStatus.COMPLETED) {
+          throw new MfsAdapterException(
+              response.errorCode() == null ? ErrorCode.MFS_ADAPTER_FAILURE : response.errorCode(),
+              "bkash execute did not complete for transaction " + transaction.getId());
+        }
+      } else {
+        PaymentProvider provider = paymentProviderRegistry.lookup(vendorEnum);
+        response = provider.queryStatus(transaction.getVendorTransactionId(), creds);
+      }
     } catch (RuntimeException e) {
       log.warn(
-          "queryStatus threw — leaving transaction in PENDING_RECOVERY [transactionId={},"
+          "vendor inquiry threw — leaving transaction in PENDING_RECOVERY [transactionId={},"
               + " vendor={}, traceId={}]",
           transaction.getId(),
           transaction.getVendor(),

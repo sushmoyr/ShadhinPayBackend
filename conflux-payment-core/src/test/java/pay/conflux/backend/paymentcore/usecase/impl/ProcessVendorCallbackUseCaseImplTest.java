@@ -23,6 +23,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import pay.conflux.backend.adapters.bkash.BkashAdapter;
 import pay.conflux.backend.adapters.port.PaymentProvider;
 import pay.conflux.backend.adapters.port.Vendor;
 import pay.conflux.backend.adapters.port.VendorCredentials;
@@ -52,6 +53,7 @@ class ProcessVendorCallbackUseCaseImplTest {
   @Mock private CredentialsResolver credentialsResolver;
   @Mock private ApplicationEventPublisher eventPublisher;
   @Mock private PaymentProvider provider;
+  @Mock private BkashAdapter bkashAdapter;
 
   @InjectMocks private ProcessVendorCallbackUseCaseImpl useCase;
 
@@ -283,5 +285,110 @@ class ProcessVendorCallbackUseCaseImplTest {
 
     assertThat(result.status()).isEqualTo("COMPLETED");
     verify(eventPublisher, times(1)).publishEvent(any(PaymentCompletedEvent.class));
+  }
+
+  // ---------------------------------------------------------------------
+  // Bkash Execute wiring (Wave D follow-up)
+  // ---------------------------------------------------------------------
+
+  private Transaction bkashTx() {
+    return Transaction.builder()
+        .id(transactionId)
+        .businessId(businessId)
+        .merchantId(merchantId)
+        .amountValue(new BigDecimal("100.00"))
+        .amountCurrency("BDT")
+        .status(TransactionStatus.PENDING)
+        .vendor("BKASH")
+        .mode(TransactionMode.PARTNER)
+        .merchantOrderReference("order-bkash-1")
+        .vendorTransactionId("PMT-BKASH-1")
+        .retryCount(0)
+        .metadata(new HashMap<>())
+        .build();
+  }
+
+  @Test
+  void execute_bkashCallback_confirmSucceeds_marksCompletedAndPublishesEvent() {
+    Transaction tx = bkashTx();
+    when(transactionRepository.findByVendorTransactionId("PMT-BKASH-1"))
+        .thenReturn(Optional.of(tx));
+    when(credentialsResolver.resolveCredentials(businessId, "BKASH"))
+        .thenReturn(Map.of("appKey", "x", "baseUrl", "https://sandbox"));
+    when(bkashAdapter.confirm(eq("PMT-BKASH-1"), any(VendorCredentials.class)))
+        .thenReturn(new VendorResponse(VendorStatus.COMPLETED, "PMT-BKASH-1", null, null, null));
+    when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    ProcessVendorCallbackResult result =
+        useCase.execute("BKASH", Map.of("mock_trx_id", "PMT-BKASH-1"));
+
+    assertThat(result.status()).isEqualTo("COMPLETED");
+    assertThat(tx.getStatus()).isEqualTo(TransactionStatus.COMPLETED);
+    verify(bkashAdapter, times(1)).confirm(eq("PMT-BKASH-1"), any(VendorCredentials.class));
+    verifyNoInteractions(paymentProviderRegistry);
+    verify(eventPublisher).publishEvent(any(PaymentCompletedEvent.class));
+    ArgumentCaptor<WebhookOutbox> captor = ArgumentCaptor.forClass(WebhookOutbox.class);
+    verify(webhookOutboxRepository).save(captor.capture());
+    assertThat(captor.getValue().getEventType()).isEqualTo(WebhookEventType.PAYMENT_COMPLETED);
+  }
+
+  @Test
+  void execute_bkashCallback_confirmFails_landsPendingRecoveryNoEvent() {
+    Transaction tx = bkashTx();
+    when(transactionRepository.findByVendorTransactionId("PMT-BKASH-1"))
+        .thenReturn(Optional.of(tx));
+    when(credentialsResolver.resolveCredentials(businessId, "BKASH"))
+        .thenReturn(Map.of("appKey", "x", "baseUrl", "https://sandbox"));
+    when(bkashAdapter.confirm(eq("PMT-BKASH-1"), any(VendorCredentials.class)))
+        .thenReturn(
+            new VendorResponse(
+                VendorStatus.FAILED,
+                "PMT-BKASH-1",
+                null,
+                "{\"statusCode\":\"2056\"}",
+                pay.conflux.backend.common.error.ErrorCode.MFS_ADAPTER_FAILURE));
+    when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    ProcessVendorCallbackResult result =
+        useCase.execute("BKASH", Map.of("mock_trx_id", "PMT-BKASH-1"));
+
+    assertThat(result.status()).isEqualTo("PENDING_RECOVERY");
+    assertThat(tx.getStatus()).isEqualTo(TransactionStatus.PENDING_RECOVERY);
+    verify(bkashAdapter, times(1)).confirm(eq("PMT-BKASH-1"), any(VendorCredentials.class));
+    verify(eventPublisher, never()).publishEvent(any(PaymentCompletedEvent.class));
+    verify(webhookOutboxRepository, never()).save(any(WebhookOutbox.class));
+  }
+
+  @Test
+  void execute_sslcommerzCallback_doesNotInvokeBkashAdapter() {
+    Transaction sslTx =
+        Transaction.builder()
+            .id(transactionId)
+            .businessId(businessId)
+            .merchantId(merchantId)
+            .amountValue(new BigDecimal("100.00"))
+            .amountCurrency("BDT")
+            .status(TransactionStatus.PENDING)
+            .vendor("SSLCOMMERZ")
+            .mode(TransactionMode.PARTNER)
+            .merchantOrderReference("order-ssl-1")
+            .vendorTransactionId("SSL-TRX-1")
+            .retryCount(0)
+            .metadata(new HashMap<>())
+            .build();
+    when(transactionRepository.findByVendorTransactionId("SSL-TRX-1"))
+        .thenReturn(Optional.of(sslTx));
+    when(paymentProviderRegistry.lookup(Vendor.SSLCOMMERZ)).thenReturn(provider);
+    when(credentialsResolver.resolveCredentials(businessId, "SSLCOMMERZ"))
+        .thenReturn(Map.of("store_id", "x"));
+    when(provider.queryStatus(eq("SSL-TRX-1"), any(VendorCredentials.class)))
+        .thenReturn(new VendorResponse(VendorStatus.COMPLETED, "SSL-TRX-1", null, null, null));
+    when(transactionRepository.save(any(Transaction.class))).thenAnswer(inv -> inv.getArgument(0));
+
+    ProcessVendorCallbackResult result =
+        useCase.execute("SSLCOMMERZ", Map.of("mock_trx_id", "SSL-TRX-1"));
+
+    assertThat(result.status()).isEqualTo("COMPLETED");
+    verifyNoInteractions(bkashAdapter);
   }
 }
