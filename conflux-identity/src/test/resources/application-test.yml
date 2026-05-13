@@ -1,6 +1,16 @@
 conflux:
   auth:
     token-secret: dev-only-test-secret-do-not-use-in-prod-32bytes!
+  identity:
+    # JwtTokenService (Wave D 1c) reads ${conflux.identity.jwt.secret} at construction.
+    # Provide a Base64 test fixture so conflux-identity slice tests that boot a Spring
+    # context (AdminProfileTest, MfaIntegrationTest, etc.) can resolve the placeholder.
+    # Identical to the application-module fixture for cross-module test parity.
+    jwt:
+      secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    super-admin:
+      identifier: test-super@example.com
+      password: test-super-password
 
 spring:
   jpa:
