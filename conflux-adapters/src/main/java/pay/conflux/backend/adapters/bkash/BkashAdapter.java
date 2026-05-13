@@ -324,8 +324,8 @@ public class BkashAdapter implements PaymentProvider {
             .header("Accept", "application/json")
             .post(RequestBody.create(serialized, JSON))
             .build();
-    try (Response response = httpClient.newCall(request).execute()) {
-      ResponseBody rb = response.body();
+    try (Response response = httpClient.newCall(request).execute();
+        ResponseBody rb = response.body()) {
       String raw = rb == null ? "" : rb.string();
       return new HttpResult(response.code(), raw);
     } catch (SocketTimeoutException e) {

@@ -111,10 +111,10 @@ public class JwtTokenService {
       return new JwtClaims(userId, userType, tier);
     } catch (ExpiredJwtException ex) {
       log.debug("JWT rejected: expired");
-      throw new UnauthorizedException("JWT is expired");
+      throw new UnauthorizedException("JWT is expired", ex);
     } catch (JwtException | IllegalArgumentException ex) {
       log.debug("JWT rejected: {}", ex.getClass().getSimpleName());
-      throw new UnauthorizedException("JWT is invalid");
+      throw new UnauthorizedException("JWT is invalid", ex);
     }
   }
 

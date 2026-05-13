@@ -129,6 +129,10 @@ spring:
       # Hibernate 6 with PostgreSQL dialect defaults to native enum DDL for @Enumerated(STRING);
       # H2 in PostgreSQL mode can't parse that, so force varchar emission here.
       hibernate.type.preferred_enum_jdbc_type: VARCHAR
+      # H2 (even in PG mode) rejects reserved words like `value` as unquoted identifiers
+      # while Postgres accepts them. Auto-quote keywords so the openapi-profile schema
+      # creates cleanly without forcing per-column name quoting in JPA entities.
+      hibernate.auto_quote_keyword: true
   flyway:
     enabled: false
   data:
@@ -149,6 +153,17 @@ spring:
       jdbc:
         schema-initialization:
           enabled: true
+conflux:
+  identity:
+    # The OpenAPI scrape only needs the application context to start so springdoc can
+    # serialize @RestController + @Schema metadata. Wave D 1b's SuperAdminBootstrap
+    # fails-fast when no SUPER admin row exists AND no seed env vars are set, which
+    # would block the H2-backed openapi profile. The values below are fixtures used
+    # solely to satisfy that guard at boot — they are never persisted anywhere outside
+    # the in-memory H2 instance that exits at the end of the openapi step.
+    super-admin:
+      identifier: openapi-fixture-super@example.com
+      password: openapi-fixture-not-real
 
 ---
 spring:

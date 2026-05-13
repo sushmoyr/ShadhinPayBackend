@@ -331,8 +331,8 @@ public class SslcommerzAdapter implements PaymentProvider {
   }
 
   private String execute(Request request) {
-    try (Response response = httpClient.newCall(request).execute()) {
-      ResponseBody body = response.body();
+    try (Response response = httpClient.newCall(request).execute();
+        ResponseBody body = response.body()) {
       String raw = body == null ? "" : body.string();
       if (!response.isSuccessful()) {
         log.warn("SSLCOMMERZ http {} from {}", response.code(), request.url().encodedPath());

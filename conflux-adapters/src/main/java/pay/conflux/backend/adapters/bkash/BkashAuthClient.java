@@ -106,8 +106,8 @@ public class BkashAuthClient implements VendorAuthClient {
             .post(RequestBody.create(payload, JSON))
             .build();
 
-    try (Response response = httpClient.newCall(request).execute()) {
-      ResponseBody body = response.body();
+    try (Response response = httpClient.newCall(request).execute();
+        ResponseBody body = response.body()) {
       String raw = body == null ? "" : body.string();
       if (!response.isSuccessful()) {
         log.warn("BKASH auth http {} from {}", response.code(), GRANT_TOKEN_PATH);
