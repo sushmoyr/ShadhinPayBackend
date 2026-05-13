@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,6 +32,7 @@ import pay.conflux.backend.identity.enums.IdentifierType;
 import pay.conflux.backend.identity.enums.UserStatus;
 import pay.conflux.backend.identity.usecase.CreateAdminUseCase;
 import pay.conflux.backend.identity.usecase.DisableAdminUseCase;
+import pay.conflux.backend.identity.usecase.GetAdminProfileUseCase;
 import pay.conflux.backend.identity.usecase.ListAdminsUseCase;
 import pay.conflux.backend.identity.usecase.UpdateAdminTierUseCase;
 
@@ -43,6 +43,7 @@ class AdminManagementControllerImplTest {
   @Mock private CreateAdminUseCase createAdminUseCase;
   @Mock private UpdateAdminTierUseCase updateAdminTierUseCase;
   @Mock private DisableAdminUseCase disableAdminUseCase;
+  @Mock private GetAdminProfileUseCase getAdminProfileUseCase;
 
   @InjectMocks private AdminManagementControllerImpl controller;
 
@@ -140,9 +141,32 @@ class AdminManagementControllerImplTest {
   }
 
   @Test
-  void me_returnsNotImplementedStubFor1b() {
+  void me_returnsCallerProfileViaUseCase() {
+    UUID adminUserId = UUID.randomUUID();
+    setAdminPrincipal(adminUserId);
+    AdminProfileDto dto =
+        new AdminProfileDto(
+            adminUserId,
+            UUID.randomUUID(),
+            "me@example.com",
+            IdentifierType.EMAIL,
+            UserStatus.ACTIVE,
+            "Ops",
+            "EMP-ME",
+            AdminTier.VIEWER);
+    when(getAdminProfileUseCase.execute(adminUserId)).thenReturn(dto);
+
     ResponseEntity<ApiResult<AdminProfileDto>> response = controller.me();
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_IMPLEMENTED);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(200);
+    assertThat(response.getBody().data()).isEqualTo(dto);
+  }
+
+  @Test
+  void me_throwsUnauthorizedWhenNoAdminContext() {
+    assertThatThrownBy(() -> controller.me())
+        .isInstanceOf(UnauthorizedException.class)
+        .hasMessageContaining("No admin context");
   }
 
   private static void setAdminPrincipal(UUID userId) {

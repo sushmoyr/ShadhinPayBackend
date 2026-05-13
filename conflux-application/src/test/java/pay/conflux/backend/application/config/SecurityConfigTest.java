@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.web.SecurityFilterChain;
 import pay.conflux.backend.application.security.ApiKeyAuthFilter;
+import pay.conflux.backend.application.security.JwtAuthorizationFilter;
+import pay.conflux.backend.identity.usecase.ResolveJwtPrincipalUseCase;
 import pay.conflux.backend.provisioning.usecase.GetBusinessByApiKeyUseCase;
 
 class SecurityConfigTest {
@@ -46,6 +48,11 @@ class SecurityConfigTest {
     @Bean
     ApiKeyAuthFilter apiKeyAuthFilter() {
       return new ApiKeyAuthFilter(mock(GetBusinessByApiKeyUseCase.class), new ObjectMapper());
+    }
+
+    @Bean
+    JwtAuthorizationFilter jwtAuthorizationFilter() {
+      return new JwtAuthorizationFilter(mock(ResolveJwtPrincipalUseCase.class), new ObjectMapper());
     }
   }
 }

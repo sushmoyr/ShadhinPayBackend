@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +23,7 @@ import pay.conflux.backend.identity.dto.UpdateAdminTierRequest;
 import pay.conflux.backend.identity.enums.AdminTier;
 import pay.conflux.backend.identity.usecase.CreateAdminUseCase;
 import pay.conflux.backend.identity.usecase.DisableAdminUseCase;
+import pay.conflux.backend.identity.usecase.GetAdminProfileUseCase;
 import pay.conflux.backend.identity.usecase.ListAdminsUseCase;
 import pay.conflux.backend.identity.usecase.UpdateAdminTierUseCase;
 
@@ -35,6 +35,7 @@ public class AdminManagementControllerImpl implements AdminManagementController 
   private final CreateAdminUseCase createAdminUseCase;
   private final UpdateAdminTierUseCase updateAdminTierUseCase;
   private final DisableAdminUseCase disableAdminUseCase;
+  private final GetAdminProfileUseCase getAdminProfileUseCase;
 
   @Override
   @PreAuthorize("hasAuthority('ADMIN_VIEWER')")
@@ -68,14 +69,12 @@ public class AdminManagementControllerImpl implements AdminManagementController 
     return ApiResult.ok();
   }
 
-  /**
-   * TODO(wave-d 1c): replace this 501 stub with a real implementation backed by {@code
-   * GetAdminProfileUseCase} + {@code SecurityUtils.currentAdminId()} once {@code
-   * JwtAuthorizationFilter} populates the principal.
-   */
   @Override
   @PreAuthorize("hasAuthority('ADMIN_VIEWER')")
   public ResponseEntity<ApiResult<AdminProfileDto>> me() {
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+    UUID adminUserId =
+        SecurityUtils.currentAdminId()
+            .orElseThrow(() -> new UnauthorizedException("No admin context"));
+    return ApiResult.ok(getAdminProfileUseCase.execute(adminUserId));
   }
 }
