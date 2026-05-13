@@ -31,3 +31,21 @@ id = "generic-api-key"
   paths = [
     '''conflux-adapters/src/test/java/pay/conflux/backend/adapters/port/VendorCredentialsTest\.java''',
   ]
+
+  [[rules.allowlists]]
+  description = """
+  Test fixture in conflux-identity/src/test/resources/application-test.yml that
+  satisfies JwtTokenService's `${conflux.identity.jwt.secret}` placeholder during
+  conflux-identity Spring slice tests. The Base64 value
+  (`MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=`, decodes to the literal ASCII
+  string `0123456789abcdef0123456789abcdef`) is identical to the fixture already
+  present in conflux-application/src/test/resources/application-test.yml line 17;
+  the application-module file was added in an earlier wave-D commit that gitleaks
+  has not scanned (`--log-opts=-1` scans only the latest commit per push). This
+  allowlist scopes by path only, so any future entries in this test yaml — high
+  entropy or not — are out of scope for the generic-api-key rule. The file is
+  never used outside `mvn test` against the in-memory H2/Testcontainers fixtures.
+  """
+  paths = [
+    '''conflux-identity/src/test/resources/application-test\.yml''',
+  ]
